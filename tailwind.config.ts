@@ -32,51 +32,51 @@ const config: Config = {
       keyframes: {
         showContent: {
           to: {
-            transform: "",
-            filter: "",
-            opacity: "",
+            transform: "translateY(0)",
+            filter: "blur(0)",
+            opacity: "1",
           },
         },
         'spin-slow': {
-          to: { transform: '' }
+          to: { transform: 'rotate(360deg)' }
         },
         'spin-reverse': {
-          to: { transform: '' }
+          to: { transform: 'rotate(-360deg)' }
         },
         'pulse-gentle': {
           '0%, 100%': {
-            opacity: '',
-            transform: '',
-            boxShadow: ''
+            opacity: '0.9',
+            transform: 'scale(1)',
+            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)'
           },
           '50%': {
-            opacity: '',
-            transform: '',
-            boxShadow: ''
+            opacity: '1',
+            transform: 'scale(1.02)',
+            boxShadow: '0 15px 35px -5px rgba(0, 0, 0, 0.15)'
           }
         },
         'float-gentle': {
-          '%, %': { transform: '' },
-          '%': { transform: '' }
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-10px)' }
         },
         'glow-pulse': {
-          '%, %': { boxShadow: '' },
-          '%': { boxShadow: '' }
+          '0%, 100%': { boxShadow: '0 0 5px rgba(57, 143, 15, 0.2)' },
+          '50%': { boxShadow: '0 0 20px rgba(57, 143, 15, 0.4), 0 0 30px rgba(57, 143, 15, 0.2)' }
         },
         'bounce-soft': {
-          '%, %, %, %, %': { transform: '' },
-          '%, %': { transform: '' },
-          '%': { transform: '' },
-          '90%': { transform: '' }
+          '0%, 20%, 53%, 80%, 100%': { transform: 'translate3d(0, 0, 0)' },
+          '40%, 43%': { transform: 'translate3d(0, -5px, 0)' },
+          '70%': { transform: 'translate3d(0, -3px, 0)' },
+          '90%': { transform: 'translate3d(0, -1px, 0)' }
         },
         'fade-in-up': {
           from: {
-            opacity: '',
-            transform: ''
+            opacity: '0',
+            transform: 'translate3d(0, 30px, 0)'
           },
           to: {
-            opacity: '',
-            transform: ''
+            opacity: '1',
+            transform: 'translate3d(0, 0, 0)'
           }
         }
       },

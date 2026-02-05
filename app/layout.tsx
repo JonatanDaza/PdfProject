@@ -1,20 +1,18 @@
-import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import '@/globals.css';
+import { JSX } from "react";
 
-import "@/styles/globals.css";
-
-export const metadata: Metadata = {
-  title: "PDF Front",
-  description: "Sistema de lectura de historias clínicas",
-};
+const inter = Inter({ subsets: ['latin'] });
 
 interface RootLayoutProps {
-  children: React.ReactNode;
+    children: React.ReactNode;
 }
 
-export default function RootLayout({ children }: RootLayoutProps) {
+export default function RootLayout({ children }: RootLayoutProps): JSX.Element {
   return (
-    <html lang="es">
-      <body>{children}</body>
-    </html>
+        <html lang="es" className="scroll-smooth">
+            <body className={`bg-white dark:bg-darkBackground text-black dark:text-white font-sans transition-colors duration-300 ${inter.className}`}>              {children}
+          </body>
+      </html>
   );
 }
