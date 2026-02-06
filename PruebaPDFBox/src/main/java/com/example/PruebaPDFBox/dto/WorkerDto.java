@@ -9,6 +9,7 @@ import lombok.*;
 public class WorkerDto {
     private Long id;
     private String CC;
+    private String name;
     private String Gender;
     private String Age;
     private String MaritalStatus;

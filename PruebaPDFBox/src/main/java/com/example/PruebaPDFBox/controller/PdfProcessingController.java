@@ -63,19 +63,19 @@ public class PdfProcessingController {
         }
     }
 
-    @PutMapping(value = "/HC/update/{id}")
-    public Map<String, Object> update(@PathVariable Long id, @RequestBody DataExamDto dataExamDto) {
-        try {
-            clinicalHistoryService.update(id, dataExamDto);
-            return ResponseHttpApi.responseHttpAction(id,
-                    ResponseHttpApi.CODE_OK, "Ok"
-            );
-        } catch (CustomException e) {
-            return ResponseHttpApi.responseHttpAction(null,ResponseHttpApi.CODE_BAD, e.getMessage());
-        } catch (Exception e) {
-            return ResponseHttpApi.responseHttpError(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
+//    @PutMapping(value = "/HC/update/{id}")
+//    public Map<String, Object> update(@PathVariable Long id, @RequestBody DataExamDto dataExamDto) {
+//        try {
+//            clinicalHistoryService.update(id, dataExamDto);
+//            return ResponseHttpApi.responseHttpAction(id,
+//                    ResponseHttpApi.CODE_OK, "Ok"
+//            );
+//        } catch (CustomException e) {
+//            return ResponseHttpApi.responseHttpAction(null,ResponseHttpApi.CODE_BAD, e.getMessage());
+//        } catch (Exception e) {
+//            return ResponseHttpApi.responseHttpError(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+//        }
+//    }
 
     @PostMapping("/upload")
     public ResponseEntity<String> uploadPdf(@RequestParam("file") MultipartFile file) {

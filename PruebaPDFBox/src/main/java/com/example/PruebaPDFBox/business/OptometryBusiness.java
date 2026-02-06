@@ -47,6 +47,7 @@ public class OptometryBusiness {
         List<FieldExtractionConfig> fields = buildFieldConfigurations(config);
         Map<String, String> data = sectionTextExtractor.extractMultipleValues(document, fields, section);
 
+        // Extraccion de la fecha del examen
         String examDate = sectionTextExtractor.extractDate(data.get("fecha"));
 
         if (examDate == null || examDate.trim().isEmpty()) {

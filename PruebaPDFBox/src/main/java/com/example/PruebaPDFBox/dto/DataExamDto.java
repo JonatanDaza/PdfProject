@@ -42,6 +42,8 @@ public class DataExamDto {
     private String CholesterolLDL;
     private String Triglycerides;
 
+    private String Interpretation;
+
     private List<HealthRequirementDto> HealthRequirements;
     private List<ObservationsDto> Observations;
     private List<RecommendationDto> Recommendations;

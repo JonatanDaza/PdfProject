@@ -45,11 +45,10 @@ public class OccupationalMedicineBusiness {
 
         Map<String, AreaConfig> config = buildEvaluationConfig();
 
-        //Extraer todos los campos en un solo recorrido
         List<FieldExtractionConfig> fields = buildFieldConfigurations(config);
         Map<String, String> data = sectionTextExtractor.extractMultipleValues(document, fields, section);
 
-        // Procesar fecha
+        // Extraer fecha
         String examDate = sectionTextExtractor.extractDate(data.get("fecha"));
 
         if (examDate == null || examDate.trim().isEmpty()) {

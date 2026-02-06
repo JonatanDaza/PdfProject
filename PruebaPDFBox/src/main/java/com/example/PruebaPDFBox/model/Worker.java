@@ -21,6 +21,7 @@ public class Worker {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String CC;
+    private String name;
     private String Gender;
     private String Age;
     private String MaritalStatus;

@@ -18,10 +18,10 @@ public class PdfSectionExtractor {
             "OPTOMETRY_LABEL", Set.of("EXAMEN DE OPTOMETRIA", "EXAMEN DE CONSULTA DE OPTOMETRIA"),
             "OCCUPATIONAL_MEDICINE_LABEL", Set.of("EVALUACIÓN MEDICA OCUPACIONAL"),
             "AUDIOMETRY_LABEL", Set.of("AUDIOMETRÍA"),
-            "SPIROMETRY_LABEL", Set.of("ESPIROMETRÍA"),
             "LABORATORY_LABEL", Set.of("RESULTADOS DEL LABORATORIO", "Laboratorio", "Laboratorio N°: 69.011", "Entidad:"),
             "PSYCHOMOTOR_LABEL", Set.of("Resumen de Resultados Test PSICO-MOTRÍZ"),
-            "PSYCHOLOGY_LABEL", Set.of("PSICOLOGÍA OCUPACIONAL")
+            "PSYCHOLOGY_LABEL", Set.of("PSICOLOGÍA OCUPACIONAL"),
+            "SPIROMETRY_LABEL", Set.of("INFORME DE ESPIROMETRÍA")
     );
 
     private static final Set<String> ALL_TITLES = SECTION_TITLES.values()

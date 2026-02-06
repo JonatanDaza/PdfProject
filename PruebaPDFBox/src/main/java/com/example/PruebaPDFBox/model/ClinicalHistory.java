@@ -1,5 +1,6 @@
 package com.example.PruebaPDFBox.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -24,7 +25,9 @@ public class ClinicalHistory {
 
     @OneToMany(
             mappedBy = "clinicalHistory",
-            cascade = CascadeType.MERGE
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
     )
+    @JsonManagedReference
     private List<Exam> exams;
 }

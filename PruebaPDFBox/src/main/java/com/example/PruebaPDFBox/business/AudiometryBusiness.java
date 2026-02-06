@@ -55,6 +55,7 @@ public class AudiometryBusiness {
         List<FieldExtractionConfig> fields = buildFieldConfigurations(config);
         Map<String, String> data = sectionTextExtractor.extractMultipleValues(document, fields, section);
 
+        // Extraccion de fecha
         String examDate = sectionTextExtractor.extractDate(data.get("fecha"));
 
         if (examDate == null || examDate.trim().isEmpty()) {

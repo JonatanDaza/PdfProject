@@ -38,7 +38,6 @@ public class DataExam {
     private String OccupationalConcept;
     private String RightEar;
     private String LeftEar;
-
     private String ExamCode;
 
     //Data from Laboratory
@@ -52,6 +51,10 @@ public class DataExam {
     private String CholesterolLDL;
     private String Triglycerides;
 
+    //Data from Spirometry
+    private String Interpretation;
+
+    //Data saved as JSON strings
     @Column(name = "health_requirements", columnDefinition = "TEXT")
     @Convert(converter = JsonStringConverter.class)
     private String HealthRequirements;
@@ -71,4 +74,5 @@ public class DataExam {
     @Column(name = "weighted_decibels", columnDefinition = "TEXT")
     @Convert(converter = JsonStringConverter.class)
     private String WeightedDecibels;
+
 }

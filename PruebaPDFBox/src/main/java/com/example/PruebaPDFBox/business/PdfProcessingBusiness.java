@@ -22,8 +22,9 @@ public class PdfProcessingBusiness {
     private final OptometryBusiness optometryBusiness;
     private final SectionTextExtractor sectionTextExtractor;
     private final LaboratoryResultBusiness laboratoryResultBusiness;
+    private final SpirometryBusiness spirometryBusiness;
 
-    public PdfProcessingBusiness(PdfSectionExtractor pdfSectionExtractor, OccupationalMedicineBusiness occupationalMedicineBusiness, AudiometryBusiness audiometryBusiness, WorkerRepository workerRepository, OptometryBusiness optometryBusiness, SectionTextExtractor sectionTextExtractor, LaboratoryResultBusiness laboratoryResultBusiness) {
+    public PdfProcessingBusiness(PdfSectionExtractor pdfSectionExtractor, OccupationalMedicineBusiness occupationalMedicineBusiness, AudiometryBusiness audiometryBusiness, WorkerRepository workerRepository, OptometryBusiness optometryBusiness, SectionTextExtractor sectionTextExtractor, LaboratoryResultBusiness laboratoryResultBusiness, SpirometryBusiness spirometryBusiness) {
         this.pdfSectionExtractor = pdfSectionExtractor;
         this.occupationalMedicineBusiness = occupationalMedicineBusiness;
         this.audiometryBusiness = audiometryBusiness;
@@ -31,6 +32,7 @@ public class PdfProcessingBusiness {
         this.optometryBusiness = optometryBusiness;
         this.sectionTextExtractor = sectionTextExtractor;
         this.laboratoryResultBusiness = laboratoryResultBusiness;
+        this.spirometryBusiness = spirometryBusiness;
     }
 
     public Map<String, Object> processPdf(MultipartFile file) {
@@ -67,7 +69,11 @@ public class PdfProcessingBusiness {
                         examsProcessed++;
                     }
                 }
-
+                if ("SPIROMETRY_LABEL".equals(entry.getKey())) {
+                    if (spirometryBusiness.process(document, entry.getValue(), worker, entry.getKey())) {
+                        examsProcessed++;
+                    }
+                }
                 if ("LABORATORY_LABEL".equals(entry.getKey())) {
                     if (laboratoryResultBusiness.process(document, entry.getValue(), entry.getKey(), worker)) {
                         examsProcessed++;
@@ -129,6 +135,8 @@ public class PdfProcessingBusiness {
         worker.setMaritalStatus(extractedData.get("Estado Civil:"));
         worker.setEducationalLevel(extractedData.get("Nivel Educativo:"));
 
+        worker.setName(extractedData.get("Nombre"));
+
         return worker;
     }
 
@@ -141,6 +149,8 @@ public class PdfProcessingBusiness {
         fields.add(new FieldExtractionConfig("Estado Civil:", "Estado Civil:", config.get("Estado Civil:"), FieldExtractionConfig.ExtractionStrategy.EXACT_MATCH));
         fields.add(new FieldExtractionConfig("Nivel Educativo:", "Nivel Educativo:", config.get("Nivel Educativo:"), FieldExtractionConfig.ExtractionStrategy.EXACT_MATCH));
 
+        fields.add(new FieldExtractionConfig("Nombre", "Nombre", config.get("Nombre"), FieldExtractionConfig.ExtractionStrategy.EXACT_MATCH));
+
         return fields;
     }
 
@@ -152,6 +162,8 @@ public class PdfProcessingBusiness {
         config.put("Edad:", new AreaConfig(0, 192, 12));
         config.put("Estado Civil:", new AreaConfig(40, 80, 12));
         config.put("Nivel Educativo:", new AreaConfig(40, 120, 12));
+
+        config.put("Nombre", new AreaConfig(120, 160, 12));
 
         return config;
     }

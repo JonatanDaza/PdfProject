@@ -1,5 +1,6 @@
 package com.example.PruebaPDFBox.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -27,7 +28,7 @@ public class Exam {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "clinical_history_id", nullable = false)
-    @JsonIgnore
+    @JsonBackReference
     private ClinicalHistory clinicalHistory;
 
     @OneToOne(cascade = CascadeType.PERSIST, orphanRemoval = true)

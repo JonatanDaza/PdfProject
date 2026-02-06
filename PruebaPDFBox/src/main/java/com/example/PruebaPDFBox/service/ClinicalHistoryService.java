@@ -9,6 +9,7 @@ import com.example.PruebaPDFBox.repository.DataExamRepository;
 import com.example.PruebaPDFBox.utilities.exception.CustomException;
 import com.example.PruebaPDFBox.utilities.mapper.ClinicalHistoryMap;
 import com.example.PruebaPDFBox.utilities.mapper.DataExamMap;
+import com.example.PruebaPDFBox.utilities.mapper.ExamMap;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -40,18 +41,36 @@ public class ClinicalHistoryService {
         }
     }
 
-    public void update(Long id, DataExamDto dataExamDto) {
+    public ClinicalHistoryDto findById(Long id) {
         try {
-//            dataExamDto.setId(id);
-            DataExam dataExam = dataExamRepository.findById(id)
-                    .orElseThrow(() -> new CustomException("DataExam not found with id: " + id, HttpStatus.NOT_FOUND));
-            DataExamMap.INSTANCE.updateDataExam(dataExamDto, dataExam);
+            ClinicalHistory clinicalHistory = clinicalHistoryRepository.findById(id)
+                    .orElseThrow(() -> new CustomException("Clinical History not found with id: " + id, HttpStatus.NOT_FOUND));
 
-            dataExamRepository.save(dataExam);
-        } catch (DataAccessException e) {
-            throw new CustomException("Error updating Clinical History: " + e.getMessage(), HttpStatus.BAD_REQUEST);
-        } catch (Exception ex) {
-            throw new CustomException("Unexpected error: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            ClinicalHistoryDto dto = ClinicalHistoryMap.INSTANCE.EntityToDTO(clinicalHistory);
+            dto.setExams(ExamMap.INSTANCE.EntityToDTOs(clinicalHistory.getExams()));
+
+            return dto;
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CustomException("Error Getting Clinical History: " + e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
+
+
+
+//    public void update(Long id, DataExamDto dataExamDto) {
+//        try {
+////            dataExamDto.setId(id);
+//            DataExam dataExam = dataExamRepository.findById(id)
+//                    .orElseThrow(() -> new CustomException("DataExam not found with id: " + id, HttpStatus.NOT_FOUND));
+//            DataExamMap.INSTANCE.updateDataExam(dataExamDto, dataExam);
+//
+//            dataExamRepository.save(dataExam);
+//        } catch (DataAccessException e) {
+//            throw new CustomException("Error updating Clinical History: " + e.getMessage(), HttpStatus.BAD_REQUEST);
+//        } catch (Exception ex) {
+//            throw new CustomException("Unexpected error: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+//        }
+//    }
 }
