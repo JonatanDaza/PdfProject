@@ -12,7 +12,6 @@ import com.example.PruebaPDFBox.repository.ClinicalHistoryRepository;
 import com.example.PruebaPDFBox.repository.DataTypeRepository;
 import com.example.PruebaPDFBox.repository.DataValueRepository;
 import com.example.PruebaPDFBox.repository.ExamRepository;
-import com.example.PruebaPDFBox.utilities.Enums.DataTypeEnum;
 import com.example.PruebaPDFBox.utilities.extractor.SectionTextExtractor;
 import com.example.PruebaPDFBox.utilities.mapper.MapperJsons.RecommendationsConductMapper;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -81,13 +80,13 @@ public class OptometryBusiness {
 
         createDataValue("DIAGNÓSTICO",
                 data.get("diagnostico"),
-                DataTypeEnum.STRING, exam);
+                exam);
 
         String rawRecommendationsConduct = sectionTextExtractor.extractTextBetweenLabels(
                 document, "CONDUCTA Y/O RECOMENDACIONES", "OTRAS OBSERVACIONES Y RECOMENDACIONES:", section
         );
         String recommendationsConductJson = recommendationsConductMapper.parseToJson(rawRecommendationsConduct);
-        createDataValue("Conducta Y/O Recomendaciones", recommendationsConductJson, DataTypeEnum.TEXT, exam);
+        createDataValue("Conducta Y/O Recomendaciones", recommendationsConductJson, exam);
 
 
         examRepository.save(exam);
@@ -105,7 +104,7 @@ public class OptometryBusiness {
         return fields;
     }
 
-    private void createDataValue(String typeName, String value, DataTypeEnum dataTypeEnum, Exam exam) {
+    private void createDataValue(String typeName, String value, Exam exam) {
         if (value == null || value.trim().isEmpty()) {
             return;
         }
@@ -119,7 +118,6 @@ public class OptometryBusiness {
 
         DataValue dataValue = new DataValue();
         dataValue.setValue(value);
-        dataValue.setDataTypeEnum(dataTypeEnum);
         dataValue.setDataType(dataType);
         dataValue.setExam(exam);
 

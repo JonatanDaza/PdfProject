@@ -1,6 +1,5 @@
 package com.example.PruebaPDFBox.model;
 
-import com.example.PruebaPDFBox.utilities.Enums.DataTypeEnum;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -22,10 +21,6 @@ public class DataValue {
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String value;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private DataTypeEnum dataTypeEnum;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "data_type_id", nullable = false)

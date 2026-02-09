@@ -12,7 +12,6 @@ import com.example.PruebaPDFBox.repository.ClinicalHistoryRepository;
 import com.example.PruebaPDFBox.repository.DataTypeRepository;
 import com.example.PruebaPDFBox.repository.DataValueRepository;
 import com.example.PruebaPDFBox.repository.ExamRepository;
-import com.example.PruebaPDFBox.utilities.Enums.DataTypeEnum;
 import com.example.PruebaPDFBox.utilities.extractor.SectionTextExtractor;
 import com.example.PruebaPDFBox.utilities.mapper.MapperJsons.ObservationsMapper;
 import com.example.PruebaPDFBox.utilities.mapper.MapperJsons.RecommendationMapper;
@@ -90,36 +89,36 @@ public class AudiometryBusiness {
 
         createDataValue("Oído derecho",
                 data.get("oidoDerecho"),
-                DataTypeEnum.STRING, exam);
+                exam);
         createDataValue("Oído izquierdo",data.get("oidoIzquierdo"),
-                DataTypeEnum.STRING, exam);
+                exam);
         createDataValue("Nombre del Diagnóstico",data.get("diagnosticos"),
-                DataTypeEnum.STRING, exam);
+                exam);
 
         // Recorridos especiales
         String rawWeightedDecibels = sectionTextExtractor.extractTextBetweenLabels(
                 document, "dB(A)", "SEVERIDAD", section
         );
         String weightedDecibelsJson = weightedDecibelsMapper.parseToJson(rawWeightedDecibels);
-        createDataValue("Ponderado Decibelios", weightedDecibelsJson, DataTypeEnum.TEXT, exam);
+        createDataValue("Ponderado Decibelios", weightedDecibelsJson, exam);
 
         String rawRecommendations = sectionTextExtractor.extractTextBetweenLabels(
                 document, "OBSERVACION", "Observaciones", section
         );
         String recommendationsJson = recommendationMapper.parseToJson(rawRecommendations);
-        createDataValue("Recomendaciones", recommendationsJson, DataTypeEnum.TEXT, exam);
+        createDataValue("Recomendaciones", recommendationsJson, exam);
 
         String rawObservations = sectionTextExtractor.extractTextBetweenLabels(
                 document, "Observaciones", "FONOAUDIÓLOGO", section
         );
         String observationsJson = observationsMapper.parseToJson(rawObservations);
-        createDataValue("Observaciones", observationsJson, DataTypeEnum.TEXT, exam);
+        createDataValue("Observaciones", observationsJson, exam);
 
         examRepository.save(exam);
         return true;
     }
 
-    private void createDataValue(String typeName, String value, DataTypeEnum dataTypeEnum, Exam exam) {
+    private void createDataValue(String typeName, String value, Exam exam) {
         if (value == null || value.trim().isEmpty()) {
             return;
         }
@@ -133,7 +132,6 @@ public class AudiometryBusiness {
 
         DataValue dataValue = new DataValue();
         dataValue.setValue(value);
-        dataValue.setDataTypeEnum(dataTypeEnum);
         dataValue.setDataType(dataType);
         dataValue.setExam(exam);
 

@@ -21,12 +21,10 @@ public class ClinicalHistoryService {
 
     private final ClinicalHistoryRepository clinicalHistoryRepository;
     private final ClinicalHistoryMap clinicalHistoryMap;
-//    private final DataExamRepository dataExamRepository;
 
-    public ClinicalHistoryService(ClinicalHistoryRepository clinicalHistoryRepository/*, DataExamRepository dataExamRepository*/) {
+    public ClinicalHistoryService(ClinicalHistoryRepository clinicalHistoryRepository) {
         this.clinicalHistoryRepository = clinicalHistoryRepository;
         this.clinicalHistoryMap = ClinicalHistoryMap.INSTANCE;
-//        this.dataExamRepository = dataExamRepository;
     }
 
     public Page<ClinicalHistoryDto> getAllClinicalHistories(int page, int size) {
@@ -56,21 +54,4 @@ public class ClinicalHistoryService {
             throw new CustomException("Error Getting Clinical History: " + e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
-
-
-
-//    public void update(Long id, DataExamDto dataExamDto) {
-//        try {
-////            dataExamDto.setId(id);
-//            DataExam dataExam = dataExamRepository.findById(id)
-//                    .orElseThrow(() -> new CustomException("DataExam not found with id: " + id, HttpStatus.NOT_FOUND));
-//            DataExamMap.INSTANCE.updateDataExam(dataExamDto, dataExam);
-//
-//            dataExamRepository.save(dataExam);
-//        } catch (DataAccessException e) {
-//            throw new CustomException("Error updating Clinical History: " + e.getMessage(), HttpStatus.BAD_REQUEST);
-//        } catch (Exception ex) {
-//            throw new CustomException("Unexpected error: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-//        }
-//    }
 }

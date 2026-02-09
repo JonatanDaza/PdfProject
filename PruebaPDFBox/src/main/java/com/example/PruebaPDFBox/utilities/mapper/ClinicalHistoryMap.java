@@ -22,7 +22,6 @@ public interface ClinicalHistoryMap {
 
     List<ClinicalHistoryDto> EntityToDTOs(List<ClinicalHistory> clinicalHistories);
 
-    @Mapping(target = "exams", ignore = true)
     void updateClinicalHistory(ClinicalHistoryDto clinicalHistoryDto, @MappingTarget ClinicalHistory clinicalHistory);
 
     default Page<ClinicalHistoryDto> EntityToDTOs(Page<ClinicalHistory> clinicalHistories) {

@@ -12,7 +12,6 @@ import com.example.PruebaPDFBox.repository.ClinicalHistoryRepository;
 import com.example.PruebaPDFBox.repository.DataTypeRepository;
 import com.example.PruebaPDFBox.repository.DataValueRepository;
 import com.example.PruebaPDFBox.repository.ExamRepository;
-import com.example.PruebaPDFBox.utilities.Enums.DataTypeEnum;
 import com.example.PruebaPDFBox.utilities.extractor.ImageTextExtractor;
 import com.example.PruebaPDFBox.utilities.extractor.SectionTextExtractor;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -84,46 +83,46 @@ public class LaboratoryResultBusiness {
         // Mapear los resultados extraídos a los campos de DataExam
         createDataValue("HEMATOCRITO",
                 results.get("HEMATOCRITO"),
-                DataTypeEnum.STRING, exam);
+                exam);
 
         createDataValue("HEMOGLOBINA",
                 results.get("HEMOGLOBINA"),
-                DataTypeEnum.STRING, exam
+                exam
         );
 
         createDataValue("RTO.BLANCOS",
                 results.get("RTO.BLANCOS"),
-                DataTypeEnum.STRING, exam
+                exam
         );
 
         createDataValue("RTO.PLAQUETAS",
                 results.get("RTO.PLAQUETAS"),
-                DataTypeEnum.STRING, exam
+                exam
         );
 
         createDataValue("GLICEMIA",
                 results.get("GLICEMIA"),
-                DataTypeEnum.STRING, exam
+                exam
         );
 
         createDataValue("COLESTEROL TOTAL",
                 results.get("COLESTEROL TOTAL"),
-                DataTypeEnum.STRING, exam
+                exam
         );
 
         createDataValue("COLESTEROL HDL",
                 results.get("COLESTEROL HDL"),
-                DataTypeEnum.STRING, exam
+                exam
         );
 
         createDataValue("COLESTEROL LDL",
                 results.get("COLESTEROL LDL"),
-                DataTypeEnum.STRING, exam
+                exam
         );
 
         createDataValue("TRIGLICERIDOS",
                 results.get("TRIGLICERIDOS"),
-                DataTypeEnum.STRING, exam
+                exam
         );
 
 
@@ -133,7 +132,7 @@ public class LaboratoryResultBusiness {
         return true;
     }
 
-    private void createDataValue(String typeName, String value, DataTypeEnum dataTypeEnum, Exam exam) {
+    private void createDataValue(String typeName, String value, Exam exam) {
         if (value == null || value.trim().isEmpty()) {
             return;
         }
@@ -147,7 +146,6 @@ public class LaboratoryResultBusiness {
 
         DataValue dataValue = new DataValue();
         dataValue.setValue(value);
-        dataValue.setDataTypeEnum(dataTypeEnum);
         dataValue.setDataType(dataType);
         dataValue.setExam(exam);
 

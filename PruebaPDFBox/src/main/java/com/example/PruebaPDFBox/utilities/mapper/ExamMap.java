@@ -19,12 +19,10 @@ public interface ExamMap {
     @Mapping(target = "clinicalHistoryId", source = "clinicalHistory.id")
     ExamDto EntityToDTO(Exam exam);
 
-    @Mapping(target = "clinicalHistory", ignore = true)
     Exam DTOToEntity(ExamDto exam);
 
     List<ExamDto> EntityToDTOs(List<Exam> exams);
 
-    @Mapping(target = "clinicalHistory", ignore = true)
     void updateExam(ExamDto examDto, @MappingTarget Exam exam);
 
     default Page<ExamDto> EntityToDTOs(Page<Exam> exams) {

@@ -8,7 +8,6 @@ import com.example.PruebaPDFBox.repository.ClinicalHistoryRepository;
 import com.example.PruebaPDFBox.repository.DataTypeRepository;
 import com.example.PruebaPDFBox.repository.DataValueRepository;
 import com.example.PruebaPDFBox.repository.ExamRepository;
-import com.example.PruebaPDFBox.utilities.Enums.DataTypeEnum;
 import com.example.PruebaPDFBox.utilities.extractor.SectionTextExtractor;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.stereotype.Component;
@@ -74,7 +73,7 @@ public class SpirometryBusiness {
 
         createDataValue("Interpretación",
                 data.get("Interpretación"),
-                DataTypeEnum.STRING, exam);
+                exam);
 
         examRepository.save(exam);
         return true;
@@ -93,7 +92,7 @@ public class SpirometryBusiness {
         return fields;
     }
 
-    private void createDataValue(String typeName, String value, DataTypeEnum dataTypeEnum, Exam exam) {
+    private void createDataValue(String typeName, String value, Exam exam) {
         if (value == null || value.trim().isEmpty()) {
             return;
         }
@@ -107,7 +106,6 @@ public class SpirometryBusiness {
 
         DataValue dataValue = new DataValue();
         dataValue.setValue(value);
-        dataValue.setDataTypeEnum(dataTypeEnum);
         dataValue.setDataType(dataType);
         dataValue.setExam(exam);
 

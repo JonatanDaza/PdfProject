@@ -1,7 +1,6 @@
 package com.example.PruebaPDFBox.controller;
 
 import com.example.PruebaPDFBox.dto.ClinicalHistoryDto;
-//import com.example.PruebaPDFBox.dto.DataExamDto;
 import com.example.PruebaPDFBox.record.PaginationRequest;
 import com.example.PruebaPDFBox.service.ClinicalHistoryService;
 import com.example.PruebaPDFBox.service.PdfProcessingService;
@@ -60,20 +59,6 @@ public class PdfProcessingController {
             throw new RuntimeException("Error retrieving Clinical Histories: " + e.getMessage(), e);
         }
     }
-
-//    @PutMapping(value = "/HC/update/{id}")
-//    public Map<String, Object> update(@PathVariable Long id, @RequestBody DataExamDto dataExamDto) {
-//        try {
-//            clinicalHistoryService.update(id, dataExamDto);
-//            return ResponseHttpApi.responseHttpAction(id,
-//                    ResponseHttpApi.CODE_OK, "Ok"
-//            );
-//        } catch (CustomException e) {
-//            return ResponseHttpApi.responseHttpAction(null,ResponseHttpApi.CODE_BAD, e.getMessage());
-//        } catch (Exception e) {
-//            return ResponseHttpApi.responseHttpError(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-//        }
-//    }
 
     @PostMapping("/upload")
     public ResponseEntity<String> uploadPdf(@RequestParam("file") MultipartFile file) {

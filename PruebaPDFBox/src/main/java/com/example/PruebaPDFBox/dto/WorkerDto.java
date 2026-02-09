@@ -2,6 +2,7 @@ package com.example.PruebaPDFBox.dto;
 
 import lombok.*;
 
+@Data
 @Getter
 @Setter
 @AllArgsConstructor

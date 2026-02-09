@@ -12,7 +12,6 @@ import com.example.PruebaPDFBox.repository.DataTypeRepository;
 import com.example.PruebaPDFBox.repository.DataValueRepository;
 import com.example.PruebaPDFBox.repository.ClinicalHistoryRepository;
 import com.example.PruebaPDFBox.repository.ExamRepository;
-import com.example.PruebaPDFBox.utilities.Enums.DataTypeEnum;
 import com.example.PruebaPDFBox.utilities.extractor.SectionTextExtractor;
 import com.example.PruebaPDFBox.utilities.mapper.MapperJsons.HealthRequirementMapper;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -80,78 +79,78 @@ public class OccupationalMedicineBusiness {
 
         createDataValue("Tiempo de Exposición",
                 sectionTextExtractor.extractOnlyNumbers(data.get("tiempoExposicion")),
-                DataTypeEnum.STRING, exam);
+                exam);
 
         createDataValue("Actividades Manuales",
                 data.get("actividadesManuales"),
-                DataTypeEnum.STRING, exam);
+                exam);
 
         createDataValue("Ejercicios o Deportes",
                 data.get("ejerciciosDeportes"),
-                DataTypeEnum.STRING, exam);
+                exam);
 
         createDataValue("Consumidor de Alcohol",
                 data.get("consumidorAlcohol"),
-                DataTypeEnum.STRING, exam);
+                exam);
 
         createDataValue("Fumador Actual",
                 data.get("fumadorActual"),
-                DataTypeEnum.STRING, exam);
+                exam);
 
         createDataValue("Tensión Arterial",
                 data.get("tensionArterial"),
-                DataTypeEnum.STRING, exam);
+                exam);
 
         createDataValue("Frecuencia Cardíaca",
                 sectionTextExtractor.extractOnlyNumbers(data.get("frecuenciaCardiaca")),
-                DataTypeEnum.STRING, exam);
+                exam);
 
         createDataValue("Frecuencia Respiratoria",
                 sectionTextExtractor.extractOnlyNumbers(data.get("frecuenciaRespiratoria")),
-                DataTypeEnum.STRING, exam);
+                exam);
 
         createDataValue("Lateralidad Dominante",
                 data.get("lateralidadDominante"),
-                DataTypeEnum.STRING, exam);
+                exam);
 
         createDataValue("Perímetro Abdominal",
                 sectionTextExtractor.extractOnlyNumbers(data.get("perimetroAbdominal")),
-                DataTypeEnum.STRING, exam);
+                exam);
 
         createDataValue("Peso",
                 sectionTextExtractor.extractOnlyNumbers(data.get("peso")),
-                DataTypeEnum.STRING, exam);
+                exam);
 
         createDataValue("Talla",
                 sectionTextExtractor.extractOnlyNumbers(data.get("talla")),
-                DataTypeEnum.STRING, exam);
+                exam);
 
         createDataValue("IMC",
                 data.get("imc"),
-                DataTypeEnum.STRING, exam);
+                exam);
 
         createDataValue("Diagnósticos",
                 data.get("diagnosticos"),
-                DataTypeEnum.TEXT, exam);
+                exam);
 
         createDataValue("Concepto Ocupacional",
                 data.get("conceptoOcupacional"),
-                DataTypeEnum.TEXT, exam);
+                exam);
 
         createDataValue("Código de Examen",
                 data.get("codigo"),
-                DataTypeEnum.STRING, exam);
+                exam);
 
         String rawHealthRequirements = sectionTextExtractor.extractTextBetweenLabels(
                 document, "Cumple", "Restricciones Laborales", section
         );
         String healthRequirementsJson = healthRequirementMapper.parseToJson(rawHealthRequirements);
-        createDataValue("Requisitos de Salud", healthRequirementsJson, DataTypeEnum.TEXT, exam);
+        createDataValue("Requisitos de Salud", healthRequirementsJson, exam);
 
         return true;
     }
 
-    private void createDataValue(String typeName, String value, DataTypeEnum dataTypeEnum, Exam exam) {
+    private void createDataValue(String typeName, String value, Exam exam) {
         if (value == null || value.trim().isEmpty()) {
             return;
         }
@@ -165,7 +164,6 @@ public class OccupationalMedicineBusiness {
 
         DataValue dataValue = new DataValue();
         dataValue.setValue(value);
-        dataValue.setDataTypeEnum(dataTypeEnum);
         dataValue.setDataType(dataType);
         dataValue.setExam(exam);
 

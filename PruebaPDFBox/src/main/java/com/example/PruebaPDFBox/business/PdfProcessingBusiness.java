@@ -137,7 +137,7 @@ public class PdfProcessingBusiness {
         worker.setMaritalStatus(extractedData.get("Estado Civil:"));
         worker.setEducationalLevel(extractedData.get("Nivel Educativo:"));
 
-        worker.setName(extractedData.get("Nombre"));
+//        worker.setName(extractedData.get("Nombre:"));
 
         return worker;
     }
@@ -151,7 +151,7 @@ public class PdfProcessingBusiness {
         fields.add(new FieldExtractionConfig("Estado Civil:", "Estado Civil:", config.get("Estado Civil:"), FieldExtractionConfig.ExtractionStrategy.EXACT_MATCH));
         fields.add(new FieldExtractionConfig("Nivel Educativo:", "Nivel Educativo:", config.get("Nivel Educativo:"), FieldExtractionConfig.ExtractionStrategy.EXACT_MATCH));
 
-        fields.add(new FieldExtractionConfig("Nombre", "Nombre", config.get("Nombre"), FieldExtractionConfig.ExtractionStrategy.EXACT_MATCH));
+//        fields.add(new FieldExtractionConfig("Nombre:", "Nombre:", config.get("Nombre:"), FieldExtractionConfig.ExtractionStrategy.EXACT_MATCH));
 
         return fields;
     }
@@ -165,7 +165,7 @@ public class PdfProcessingBusiness {
         config.put("Estado Civil:", new AreaConfig(40, 80, 12));
         config.put("Nivel Educativo:", new AreaConfig(40, 120, 12));
 
-        config.put("Nombre", new AreaConfig(120, 160, 12));
+//        config.put("Nombre:", new AreaConfig(0, 160, 12));
 
         return config;
     }

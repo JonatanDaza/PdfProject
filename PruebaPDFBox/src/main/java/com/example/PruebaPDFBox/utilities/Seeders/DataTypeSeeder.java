@@ -25,6 +25,7 @@ public class DataTypeSeeder implements CommandLineRunner {
         createTypesNotExists("Frecuencia Cardíaca");
         createTypesNotExists("Frecuencia Respiratoria");
         createTypesNotExists("Lateralidad Dominante");
+        createTypesNotExists("Perímetro Abdominal");
         createTypesNotExists("Peso");
         createTypesNotExists("Talla");
         createTypesNotExists("IMC");
