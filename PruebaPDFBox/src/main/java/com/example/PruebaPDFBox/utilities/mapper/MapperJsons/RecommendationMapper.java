@@ -1,6 +1,6 @@
-package com.example.PruebaPDFBox.utilities.mapper;
+package com.example.PruebaPDFBox.utilities.mapper.MapperJsons;
 
-import com.example.PruebaPDFBox.dto.RecommendationDto;
+import com.example.PruebaPDFBox.dto.DTOJson.RecommendationDto;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.stereotype.Component;
 

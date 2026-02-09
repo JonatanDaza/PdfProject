@@ -1,7 +1,7 @@
 package com.example.PruebaPDFBox.utilities.extractor;
 
 import com.example.PruebaPDFBox.record.SectionArea;
-import com.example.PruebaPDFBox.utilities.exception.CustomException;
+import com.example.PruebaPDFBox.utilities.Infrastructure.exception.CustomException;
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;

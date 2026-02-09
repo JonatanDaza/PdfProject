@@ -3,7 +3,7 @@
 package com.example.PruebaPDFBox.utilities.extractor;
 
 import com.example.PruebaPDFBox.record.SectionArea;
-import com.example.PruebaPDFBox.utilities.exception.CustomException;
+import com.example.PruebaPDFBox.utilities.Infrastructure.exception.CustomException;
 import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.Word;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -436,6 +436,24 @@ public class ImageTextExtractor {
     private boolean isNumeric(String text) {
         return isValidNumericValue(text);
     }
+
+    public boolean hasValidTableImage(PDDocument document, List<Integer> targetPages) {
+        for (int pageNum : targetPages) {
+            if (!isValidPage(document, pageNum)) continue;
+
+            List<BufferedImage> images = sectionImgExtractor.extractImages(
+                    document, new SectionArea(pageNum, 0, pageNum, Float.MAX_VALUE)
+            );
+
+            for (BufferedImage image : images) {
+                if (isValidTableImage(image)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
 }
 
 //// version 3 daña la extraccion del label: RTO.PLAQUETAS

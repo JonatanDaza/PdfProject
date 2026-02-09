@@ -1,4 +1,4 @@
-package com.example.PruebaPDFBox.model;
+package com.example.PruebaPDFBox.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,6 +9,8 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class RecommendationsConduct {
-    private String RecommendationConductText;
+public class DataTypeDto {
+
+    private Long id;
+    private String name;
 }

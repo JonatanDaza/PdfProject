@@ -9,6 +9,10 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class RecommendationsConductDto {
-    private String RecommendationConductText;
+public class DataValueDto {
+
+    private Long id;
+    private String value;
+    private DataTypeDto dataType;
+    private ExamDto exam;
 }

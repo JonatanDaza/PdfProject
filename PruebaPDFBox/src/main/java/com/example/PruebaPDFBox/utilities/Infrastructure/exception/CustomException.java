@@ -1,4 +1,4 @@
-package com.example.PruebaPDFBox.utilities.exception;
+package com.example.PruebaPDFBox.utilities.Infrastructure.exception;
 
 import org.springframework.http.HttpStatus;
 

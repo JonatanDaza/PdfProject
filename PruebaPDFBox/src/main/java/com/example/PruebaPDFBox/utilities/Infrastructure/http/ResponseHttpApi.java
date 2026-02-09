@@ -1,4 +1,4 @@
-package com.example.PruebaPDFBox.utilities.http;
+package com.example.PruebaPDFBox.utilities.Infrastructure.http;
 
 import org.springframework.http.HttpStatus;
 

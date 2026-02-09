@@ -1,14 +1,14 @@
 package com.example.PruebaPDFBox.business;
 
-import com.example.PruebaPDFBox.model.ClinicalHistory;
-import com.example.PruebaPDFBox.model.DataExam;
-import com.example.PruebaPDFBox.model.Exam;
-import com.example.PruebaPDFBox.model.Worker;
+import com.example.PruebaPDFBox.model.*;
 import com.example.PruebaPDFBox.record.AreaConfig;
 import com.example.PruebaPDFBox.record.FieldExtractionConfig;
 import com.example.PruebaPDFBox.record.SectionArea;
 import com.example.PruebaPDFBox.repository.ClinicalHistoryRepository;
+import com.example.PruebaPDFBox.repository.DataTypeRepository;
+import com.example.PruebaPDFBox.repository.DataValueRepository;
 import com.example.PruebaPDFBox.repository.ExamRepository;
+import com.example.PruebaPDFBox.utilities.Enums.DataTypeEnum;
 import com.example.PruebaPDFBox.utilities.extractor.SectionTextExtractor;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.stereotype.Component;
@@ -24,15 +24,19 @@ public class SpirometryBusiness {
     private final SectionTextExtractor sectionTextExtractor;
     private final ExamRepository examRepository;
     private final ClinicalHistoryRepository clinicalHistoryRepository;
+    private final DataTypeRepository dataTypeRepository;
+    private final DataValueRepository dataValueRepository;
 
     public SpirometryBusiness(
             SectionTextExtractor sectionTextExtractor,
             ExamRepository examRepository,
-            ClinicalHistoryRepository clinicalHistoryRepository
-    ) {
+            ClinicalHistoryRepository clinicalHistoryRepository,
+            DataTypeRepository dataTypeRepository, DataValueRepository dataValueRepository) {
         this.sectionTextExtractor = sectionTextExtractor;
         this.examRepository = examRepository;
         this.clinicalHistoryRepository = clinicalHistoryRepository;
+        this.dataTypeRepository = dataTypeRepository;
+        this.dataValueRepository = dataValueRepository;
     }
 
     public boolean process(
@@ -47,7 +51,6 @@ public class SpirometryBusiness {
         List<FieldExtractionConfig> fields = buildFieldConfigurations(config);
         Map<String, String> data = sectionTextExtractor.extractMultipleValues(document, fields, section);
 
-        // Extraer la fecha del examen
         String examDate = sectionTextExtractor.extractDate(data.get("fecha"));
 
         if (examDate == null || examDate.trim().isEmpty()) {
@@ -58,20 +61,20 @@ public class SpirometryBusiness {
             return false;
         }
 
-        ClinicalHistory hc = clinicalHistoryRepository.findByWorkerAndExamDate(worker, examDate)
+        ClinicalHistory clinicalHistory = clinicalHistoryRepository
+                .findByWorkerAndExamDate(worker, examDate)
                 .orElseGet(() -> clinicalHistoryRepository.save(new ClinicalHistory()));
 
-        DataExam dataExam = new DataExam();
         Exam exam = new Exam();
-
-
         exam.setExamName(examName);
         exam.setExamDate(examDate);
-        exam.setClinicalHistory(hc);
+        exam.setClinicalHistory(clinicalHistory);
         exam.setWorker(worker);
-        exam.setDataExam(dataExam);
+        exam = examRepository.save(exam);
 
-        dataExam.setInterpretation(data.get("Interpretación"));
+        createDataValue("Interpretación",
+                data.get("Interpretación"),
+                DataTypeEnum.STRING, exam);
 
         examRepository.save(exam);
         return true;
@@ -88,6 +91,27 @@ public class SpirometryBusiness {
                 config.get("Interpretación"), FieldExtractionConfig.ExtractionStrategy.VERTICAL));
 
         return fields;
+    }
+
+    private void createDataValue(String typeName, String value, DataTypeEnum dataTypeEnum, Exam exam) {
+        if (value == null || value.trim().isEmpty()) {
+            return;
+        }
+
+        DataType dataType = dataTypeRepository.findByName(typeName)
+                .orElseGet(() -> {
+                    DataType newType = new DataType();
+                    newType.setName(typeName);
+                    return dataTypeRepository.save(newType);
+                });
+
+        DataValue dataValue = new DataValue();
+        dataValue.setValue(value);
+        dataValue.setDataTypeEnum(dataTypeEnum);
+        dataValue.setDataType(dataType);
+        dataValue.setExam(exam);
+
+        dataValueRepository.save(dataValue);
     }
 
     private Map<String, AreaConfig> buildSpirometryConfig() {

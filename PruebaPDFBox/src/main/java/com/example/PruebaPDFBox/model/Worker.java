@@ -1,5 +1,6 @@
 package com.example.PruebaPDFBox.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -7,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -27,11 +29,7 @@ public class Worker {
     private String MaritalStatus;
     private String EducationalLevel;
 
-    @OneToMany(
-            mappedBy = "worker",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true
-    )
-    @JsonIgnore
-    private List<Exam> exams;
+    @OneToMany(mappedBy = "worker")
+    @JsonBackReference
+    private List<Exam> exams = new ArrayList<>();
 }

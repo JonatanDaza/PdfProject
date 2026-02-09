@@ -1,4 +1,4 @@
-package com.example.PruebaPDFBox.dto;
+package com.example.PruebaPDFBox.dto.DTOJson;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,7 +9,6 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class HealthRequirementDto {
-    private String Requisito;
-    private String Cumple;
+public class RecommendationsConductDto {
+    private String RecommendationConductText;
 }

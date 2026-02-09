@@ -1,13 +1,20 @@
 package com.example.PruebaPDFBox.business;
 
+import com.example.PruebaPDFBox.model.ClinicalHistory;
+import com.example.PruebaPDFBox.model.DataType;
+import com.example.PruebaPDFBox.model.DataValue;
+import com.example.PruebaPDFBox.model.Exam;
+import com.example.PruebaPDFBox.model.Worker;
 import com.example.PruebaPDFBox.record.AreaConfig;
 import com.example.PruebaPDFBox.record.FieldExtractionConfig;
 import com.example.PruebaPDFBox.record.SectionArea;
-import com.example.PruebaPDFBox.model.*;
 import com.example.PruebaPDFBox.repository.ClinicalHistoryRepository;
+import com.example.PruebaPDFBox.repository.DataTypeRepository;
+import com.example.PruebaPDFBox.repository.DataValueRepository;
 import com.example.PruebaPDFBox.repository.ExamRepository;
+import com.example.PruebaPDFBox.utilities.Enums.DataTypeEnum;
 import com.example.PruebaPDFBox.utilities.extractor.SectionTextExtractor;
-import com.example.PruebaPDFBox.utilities.mapper.RecommendationsConductMapper;
+import com.example.PruebaPDFBox.utilities.mapper.MapperJsons.RecommendationsConductMapper;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.stereotype.Component;
 
@@ -23,16 +30,20 @@ public class OptometryBusiness {
     private final ExamRepository examRepository;
     private final ClinicalHistoryRepository clinicalHistoryRepository;
     private final RecommendationsConductMapper recommendationsConductMapper;
+    private final DataTypeRepository dataTypeRepository;
+    private final DataValueRepository dataValueRepository;
 
     public OptometryBusiness(
             SectionTextExtractor sectionTextExtractor,
             ExamRepository examRepository,
-            ClinicalHistoryRepository clinicalHistoryRepository, RecommendationsConductMapper recommendationsConductMapper)
+            ClinicalHistoryRepository clinicalHistoryRepository, RecommendationsConductMapper recommendationsConductMapper, DataTypeRepository dataTypeRepository, DataValueRepository dataValueRepository)
     {
         this.sectionTextExtractor = sectionTextExtractor;
         this.examRepository = examRepository;
         this.clinicalHistoryRepository = clinicalHistoryRepository;
         this.recommendationsConductMapper = recommendationsConductMapper;
+        this.dataTypeRepository = dataTypeRepository;
+        this.dataValueRepository = dataValueRepository;
     }
 
     public boolean process(
@@ -47,7 +58,6 @@ public class OptometryBusiness {
         List<FieldExtractionConfig> fields = buildFieldConfigurations(config);
         Map<String, String> data = sectionTextExtractor.extractMultipleValues(document, fields, section);
 
-        // Extraccion de la fecha del examen
         String examDate = sectionTextExtractor.extractDate(data.get("fecha"));
 
         if (examDate == null || examDate.trim().isEmpty()) {
@@ -58,24 +68,27 @@ public class OptometryBusiness {
             return false;
         }
 
-        ClinicalHistory hc = clinicalHistoryRepository.findByWorkerAndExamDate(worker, examDate)
+        ClinicalHistory clinicalHistory = clinicalHistoryRepository
+                .findByWorkerAndExamDate(worker, examDate)
                 .orElseGet(() -> clinicalHistoryRepository.save(new ClinicalHistory()));
 
-        DataExam dataExam = new DataExam();
         Exam exam = new Exam();
-
         exam.setExamName(examName);
         exam.setExamDate(examDate);
-        exam.setClinicalHistory(hc);
+        exam.setClinicalHistory(clinicalHistory);
         exam.setWorker(worker);
-        exam.setDataExam(dataExam);
+        exam = examRepository.save(exam);
 
-        dataExam.setDiagnostics(data.get("diagnostico"));
+        createDataValue("DIAGNÓSTICO",
+                data.get("diagnostico"),
+                DataTypeEnum.STRING, exam);
 
         String rawRecommendationsConduct = sectionTextExtractor.extractTextBetweenLabels(
-                document,"CONDUCTA Y/O RECOMENDACIONES", "OTRAS OBSERVACIONES Y RECOMENDACIONES:", section);
+                document, "CONDUCTA Y/O RECOMENDACIONES", "OTRAS OBSERVACIONES Y RECOMENDACIONES:", section
+        );
         String recommendationsConductJson = recommendationsConductMapper.parseToJson(rawRecommendationsConduct);
-        dataExam.setRecommendationsConduct(recommendationsConductJson);
+        createDataValue("Conducta Y/O Recomendaciones", recommendationsConductJson, DataTypeEnum.TEXT, exam);
+
 
         examRepository.save(exam);
         return true;
@@ -92,50 +105,26 @@ public class OptometryBusiness {
         return fields;
     }
 
-//
-//    public boolean process(
-//            PDDocument document,
-//            SectionArea section,
-//            Worker worker,
-//            String examName
-//    ) throws Exception {
-//
-//        Map<String, AreaConfig> config = buildOptometryConfig();
-//
-//        String rawDate = sectionTextExtractor.extractValue(document, "Fecha:", section, config.get("Fecha:"));
-//        String examDate = sectionTextExtractor.extractDate(rawDate);
-//
-//        if (examDate == null || examDate.trim().isEmpty()) {
-//            return false;
-//        }
-//
-//        if (examRepository.findByExamDateAndExamName(examDate, examName).isPresent()) {
-//            return false;
-//        }
-//
-//        ClinicalHistory hc = clinicalHistoryRepository.findByWorkerAndExamDate(worker, examDate)
-//                .orElseGet(() -> clinicalHistoryRepository.save(new ClinicalHistory()));
-//
-//        DataExam dataExam = new DataExam();
-//        Exam exam = new Exam();
-//
-//        exam.setExamName(examName);
-//        exam.setExamDate(examDate);
-//
-//        exam.setClinicalHistory(hc);
-//        exam.setWorker(worker);
-//        exam.setDataExam(dataExam);
-//
-//        dataExam.setDiagnostics(sectionTextExtractor.extractValueExact(document, "DIAGNÓSTICO", section, config.get("DIAGNÓSTICO")));
-//
-//        String rawRecommendationsConduct = sectionTextExtractor.extractTextBetweenLabels(document,"CONDUCTA Y/O RECOMENDACIONES", "OTRAS OBSERVACIONES Y RECOMENDACIONES:", section);
-//        String recommendationsConductJson = recommendationsConductMapper.parseToJson(rawRecommendationsConduct);
-//        dataExam.setRecommendationsConduct(recommendationsConductJson);
-//
-//        examRepository.save(exam);
-//        return true;
-//    }
-//
+    private void createDataValue(String typeName, String value, DataTypeEnum dataTypeEnum, Exam exam) {
+        if (value == null || value.trim().isEmpty()) {
+            return;
+        }
+
+        DataType dataType = dataTypeRepository.findByName(typeName)
+                .orElseGet(() -> {
+                    DataType newType = new DataType();
+                    newType.setName(typeName);
+                    return dataTypeRepository.save(newType);
+                });
+
+        DataValue dataValue = new DataValue();
+        dataValue.setValue(value);
+        dataValue.setDataTypeEnum(dataTypeEnum);
+        dataValue.setDataType(dataType);
+        dataValue.setExam(exam);
+
+        dataValueRepository.save(dataValue);
+    }
 
     private Map<String, AreaConfig> buildOptometryConfig() {
         Map<String, AreaConfig> config = new HashMap<>();

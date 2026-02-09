@@ -1,14 +1,12 @@
 package com.example.PruebaPDFBox.controller;
 
 import com.example.PruebaPDFBox.dto.ClinicalHistoryDto;
-import com.example.PruebaPDFBox.dto.DataExamDto;
+//import com.example.PruebaPDFBox.dto.DataExamDto;
 import com.example.PruebaPDFBox.record.PaginationRequest;
 import com.example.PruebaPDFBox.service.ClinicalHistoryService;
 import com.example.PruebaPDFBox.service.PdfProcessingService;
-import com.example.PruebaPDFBox.utilities.exception.CustomException;
-import com.example.PruebaPDFBox.utilities.http.ResponseHttpApi;
+import com.example.PruebaPDFBox.utilities.Infrastructure.http.ResponseHttpApi;
 import org.springframework.data.domain.Page;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

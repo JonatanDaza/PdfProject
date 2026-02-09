@@ -2,11 +2,14 @@ package com.example.PruebaPDFBox.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.List;
 
 @Entity
 @Table(name = "exam")
@@ -31,11 +34,13 @@ public class Exam {
     @JsonBackReference
     private ClinicalHistory clinicalHistory;
 
-    @OneToOne(cascade = CascadeType.PERSIST, orphanRemoval = true)
-    @JoinColumn(name = "data_exam_id", nullable = false)
-    private DataExam dataExam;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "worker_id", nullable = false)
+    @JsonBackReference
     private Worker worker;
+
+    @OneToMany(mappedBy = "exam", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    private List<DataValue> dataValues;
+
 }

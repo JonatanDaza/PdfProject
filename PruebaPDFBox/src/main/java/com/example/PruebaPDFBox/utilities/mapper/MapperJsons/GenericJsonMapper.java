@@ -1,4 +1,4 @@
-package com.example.PruebaPDFBox.utilities.mapper;
+package com.example.PruebaPDFBox.utilities.mapper.MapperJsons;
 
 import com.example.PruebaPDFBox.utilities.config.JsonMapperConfig;
 import com.fasterxml.jackson.core.type.TypeReference;

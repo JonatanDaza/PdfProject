@@ -1,9 +1,9 @@
 package com.example.PruebaPDFBox.business;
 
+import com.example.PruebaPDFBox.model.Worker;
 import com.example.PruebaPDFBox.record.AreaConfig;
 import com.example.PruebaPDFBox.record.FieldExtractionConfig;
 import com.example.PruebaPDFBox.record.SectionArea;
-import com.example.PruebaPDFBox.model.*;
 import com.example.PruebaPDFBox.repository.WorkerRepository;
 import com.example.PruebaPDFBox.utilities.extractor.PdfSectionExtractor;
 import com.example.PruebaPDFBox.utilities.extractor.SectionTextExtractor;
@@ -17,20 +17,20 @@ public class PdfProcessingBusiness {
 
     private final PdfSectionExtractor pdfSectionExtractor;
     private final OccupationalMedicineBusiness occupationalMedicineBusiness;
-    private final AudiometryBusiness audiometryBusiness;
     private final WorkerRepository workerRepository;
-    private final OptometryBusiness optometryBusiness;
     private final SectionTextExtractor sectionTextExtractor;
+    private final AudiometryBusiness audiometryBusiness;
+    private final OptometryBusiness optometryBusiness;
     private final LaboratoryResultBusiness laboratoryResultBusiness;
     private final SpirometryBusiness spirometryBusiness;
 
-    public PdfProcessingBusiness(PdfSectionExtractor pdfSectionExtractor, OccupationalMedicineBusiness occupationalMedicineBusiness, AudiometryBusiness audiometryBusiness, WorkerRepository workerRepository, OptometryBusiness optometryBusiness, SectionTextExtractor sectionTextExtractor, LaboratoryResultBusiness laboratoryResultBusiness, SpirometryBusiness spirometryBusiness) {
+    public PdfProcessingBusiness(PdfSectionExtractor pdfSectionExtractor, OccupationalMedicineBusiness occupationalMedicineBusiness, WorkerRepository workerRepository, SectionTextExtractor sectionTextExtractor, AudiometryBusiness audiometryBusiness, OptometryBusiness optometryBusiness, LaboratoryResultBusiness laboratoryResultBusiness, SpirometryBusiness spirometryBusiness) {
         this.pdfSectionExtractor = pdfSectionExtractor;
         this.occupationalMedicineBusiness = occupationalMedicineBusiness;
-        this.audiometryBusiness = audiometryBusiness;
         this.workerRepository = workerRepository;
-        this.optometryBusiness = optometryBusiness;
         this.sectionTextExtractor = sectionTextExtractor;
+        this.audiometryBusiness = audiometryBusiness;
+        this.optometryBusiness = optometryBusiness;
         this.laboratoryResultBusiness = laboratoryResultBusiness;
         this.spirometryBusiness = spirometryBusiness;
     }
@@ -69,11 +69,13 @@ public class PdfProcessingBusiness {
                         examsProcessed++;
                     }
                 }
-                if ("SPIROMETRY_LABEL".equals(entry.getKey())) {
-                    if (spirometryBusiness.process(document, entry.getValue(), worker, entry.getKey())) {
-                        examsProcessed++;
-                    }
-                }
+
+//                if ("SPIROMETRY_LABEL".equals(entry.getKey())) {
+//                    if (spirometryBusiness.process(document, entry.getValue(), worker, entry.getKey())) {
+//                        examsProcessed++;
+//                    }
+//                }
+
                 if ("LABORATORY_LABEL".equals(entry.getKey())) {
                     if (laboratoryResultBusiness.process(document, entry.getValue(), entry.getKey(), worker)) {
                         examsProcessed++;

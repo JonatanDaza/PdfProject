@@ -1,6 +1,7 @@
 package com.example.PruebaPDFBox.dto;
 
 import lombok.*;
+import java.util.List;
 
 @Getter
 @Setter
@@ -11,6 +12,7 @@ public class ExamDto {
     private String examName;
     private String examDate;
     private Long clinicalHistoryId;
-    private DataExamDto dataExam;
+    private List<DataValueDto> dataValues;
     private WorkerDto worker;
 }
+

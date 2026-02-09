@@ -12,7 +12,7 @@ import org.springframework.data.domain.PageImpl;
 
 import java.util.List;
 
-@Mapper(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE, uses = {WorkerMap.class, DataExamMap.class})
+@Mapper(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE, uses = {WorkerMap.class})
 public interface ExamMap {
     ExamMap INSTANCE = Mappers.getMapper(ExamMap.class);
 

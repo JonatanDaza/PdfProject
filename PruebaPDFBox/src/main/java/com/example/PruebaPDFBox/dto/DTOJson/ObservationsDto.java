@@ -1,4 +1,4 @@
-package com.example.PruebaPDFBox.dto;
+package com.example.PruebaPDFBox.dto.DTOJson;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
