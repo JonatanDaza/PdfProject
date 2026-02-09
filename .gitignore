@@ -73,3 +73,7 @@ extracted_images/
 
 # # Local env files
 # .env.example
+
+# Ignore GitHub and Git directories
+.github/
+.git
