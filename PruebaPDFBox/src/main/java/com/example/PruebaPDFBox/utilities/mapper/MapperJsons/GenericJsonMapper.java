@@ -1,6 +1,6 @@
 package com.example.PruebaPDFBox.utilities.mapper.MapperJsons;
 
-import com.example.PruebaPDFBox.utilities.config.JsonMapperConfig;
+import com.example.PruebaPDFBox.utilities.config.MapperConfig.JsonMapperConfig;
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.util.ArrayList;

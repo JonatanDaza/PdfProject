@@ -43,5 +43,4 @@ public class Exam {
     @OneToMany(mappedBy = "exam", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private Set<DataValue> dataValues;
-
 }

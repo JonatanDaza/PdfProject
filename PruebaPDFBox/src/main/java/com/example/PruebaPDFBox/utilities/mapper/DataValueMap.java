@@ -2,7 +2,7 @@ package com.example.PruebaPDFBox.utilities.mapper;
 
 import com.example.PruebaPDFBox.dto.DataValueDto;
 import com.example.PruebaPDFBox.model.DataValue;
-import com.example.PruebaPDFBox.utilities.config.DataValueConverter;
+import com.example.PruebaPDFBox.utilities.config.MapperConfig.DataValueConverter;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;

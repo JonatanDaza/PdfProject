@@ -1,4 +1,4 @@
-package com.example.PruebaPDFBox.utilities.extractor;
+package com.example.PruebaPDFBox.utilities.extractor.SectionExtractor;
 
 import com.example.PruebaPDFBox.record.SectionArea;
 import com.example.PruebaPDFBox.utilities.Infrastructure.exception.CustomException;
@@ -19,9 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
-public class SectionImgExtractor {
+public class PdfImgSectionExtractor {
 
-/// version 2 funcional
     private static final int MIN_EMBEDDED_WIDTH = 700;
     private static final int MIN_EMBEDDED_HEIGHT = 300;
 
@@ -148,27 +147,3 @@ public class SectionImgExtractor {
         }
     }
 }
-
-//// version 1
-//    public List<BufferedImage> extractImages(PDDocument document, SectionArea sectionArea) {
-//        List<BufferedImage> images = new ArrayList<>();
-//
-//        // Extraer imágenes de las páginas de la sección
-//        for (int pageNum = sectionArea.startPage(); pageNum <= sectionArea.endPage(); pageNum++) {
-//            PDPage page = document.getPage(pageNum);
-//
-//            for (COSName name : page.getResources().getXObjectNames()) {
-//                try {
-//                    PDXObject xObject = page.getResources().getXObject(name);
-//                    if (xObject instanceof PDImageXObject image) {
-//                        images.add(image.getImage());
-//                    }
-//                } catch (Exception e) {
-//                    throw new CustomException("Error al extraer imágenes de la página " + pageNum, HttpStatus.BAD_REQUEST);
-//                }
-//            }
-//        }
-//
-//        return images;
-//    }
-//}

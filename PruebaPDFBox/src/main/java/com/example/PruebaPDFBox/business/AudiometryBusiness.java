@@ -12,7 +12,7 @@ import com.example.PruebaPDFBox.repository.ClinicalHistoryRepository;
 import com.example.PruebaPDFBox.repository.DataTypeRepository;
 import com.example.PruebaPDFBox.repository.DataValueRepository;
 import com.example.PruebaPDFBox.repository.ExamRepository;
-import com.example.PruebaPDFBox.utilities.extractor.SectionTextExtractor;
+import com.example.PruebaPDFBox.utilities.extractor.TextExtractor.SectionTextExtractor;
 import com.example.PruebaPDFBox.utilities.mapper.MapperJsons.ObservationsMapper;
 import com.example.PruebaPDFBox.utilities.mapper.MapperJsons.RecommendationMapper;
 import com.example.PruebaPDFBox.utilities.mapper.MapperJsons.WeightedDecibelsMapper;

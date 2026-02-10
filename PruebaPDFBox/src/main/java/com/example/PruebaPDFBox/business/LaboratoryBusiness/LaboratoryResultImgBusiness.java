@@ -5,15 +5,13 @@ import com.example.PruebaPDFBox.model.DataType;
 import com.example.PruebaPDFBox.model.DataValue;
 import com.example.PruebaPDFBox.model.Exam;
 import com.example.PruebaPDFBox.model.Worker;
-import com.example.PruebaPDFBox.record.AreaConfig;
-import com.example.PruebaPDFBox.record.FieldExtractionConfig;
 import com.example.PruebaPDFBox.record.SectionArea;
 import com.example.PruebaPDFBox.repository.ClinicalHistoryRepository;
 import com.example.PruebaPDFBox.repository.DataTypeRepository;
 import com.example.PruebaPDFBox.repository.DataValueRepository;
 import com.example.PruebaPDFBox.repository.ExamRepository;
-import com.example.PruebaPDFBox.utilities.extractor.ImageTextExtractor;
-import com.example.PruebaPDFBox.utilities.extractor.SectionTextExtractor;
+import com.example.PruebaPDFBox.utilities.extractor.TextExtractor.ImageTextExtractor;
+import com.example.PruebaPDFBox.utilities.extractor.TextExtractor.SectionTextExtractor;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.stereotype.Component;
 

@@ -2,7 +2,7 @@ package com.example.PruebaPDFBox.controller;
 
 import com.example.PruebaPDFBox.dto.ClinicalHistoryDto;
 import com.example.PruebaPDFBox.record.PaginationRequest;
-import com.example.PruebaPDFBox.service.ClinicalHistoryService;
+import com.example.PruebaPDFBox.service.ServiceEntity.ClinicalHistoryService;
 import com.example.PruebaPDFBox.service.PdfProcessingService;
 import com.example.PruebaPDFBox.utilities.Infrastructure.http.ResponseHttpApi;
 import org.springframework.data.domain.Page;

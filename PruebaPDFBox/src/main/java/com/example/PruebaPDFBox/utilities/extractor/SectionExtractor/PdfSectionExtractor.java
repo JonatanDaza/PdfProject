@@ -1,4 +1,4 @@
-package com.example.PruebaPDFBox.utilities.extractor;
+package com.example.PruebaPDFBox.utilities.extractor.SectionExtractor;
 
 import com.example.PruebaPDFBox.record.PdfTextBlock;
 import com.example.PruebaPDFBox.record.SectionArea;

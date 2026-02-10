@@ -19,10 +19,6 @@ public interface ClinicalHistoryRepository  extends JpaRepository<ClinicalHistor
     @Query("SELECT DISTINCT e.clinicalHistory FROM Exam e WHERE e.worker = :worker AND e.examDate = :examDate")
     Optional<ClinicalHistory> findByWorkerAndExamDate(@Param("worker") Worker worker, @Param("examDate") String examDate);
 
-    @EntityGraph(attributePaths = {"exams", "exams.dataValues", "exams.worker"})
-    @Query("SELECT ch FROM ClinicalHistory ch")
-    Page<ClinicalHistory> findAllPaged(Pageable pageable);
-
     @Query("""
     SELECT ch.id
     FROM ClinicalHistory ch

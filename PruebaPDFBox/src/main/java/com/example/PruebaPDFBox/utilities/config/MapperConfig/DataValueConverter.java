@@ -1,4 +1,4 @@
-package com.example.PruebaPDFBox.utilities.config;
+package com.example.PruebaPDFBox.utilities.config.MapperConfig;
 
 import org.mapstruct.Named;
 import org.springframework.stereotype.Component;

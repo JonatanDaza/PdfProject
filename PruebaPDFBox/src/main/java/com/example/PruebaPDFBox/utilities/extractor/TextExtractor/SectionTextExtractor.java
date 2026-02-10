@@ -1,4 +1,4 @@
-package com.example.PruebaPDFBox.utilities.extractor;
+package com.example.PruebaPDFBox.utilities.extractor.TextExtractor;
 
 import com.example.PruebaPDFBox.record.AreaConfig;
 import com.example.PruebaPDFBox.record.FieldExtractionConfig;
