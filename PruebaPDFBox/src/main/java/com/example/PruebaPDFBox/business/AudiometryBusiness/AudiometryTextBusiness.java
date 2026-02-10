@@ -1,4 +1,4 @@
-package com.example.PruebaPDFBox.business;
+package com.example.PruebaPDFBox.business.AudiometryBusiness;
 
 import com.example.PruebaPDFBox.model.ClinicalHistory;
 import com.example.PruebaPDFBox.model.DataType;
@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 @Component
-public class AudiometryBusiness {
+public class AudiometryTextBusiness {
 
     private final SectionTextExtractor sectionTextExtractor;
     private final ExamRepository examRepository;
@@ -36,7 +36,7 @@ public class AudiometryBusiness {
     private final DataTypeRepository dataTypeRepository;
     private final DataValueRepository dataValueRepository;
 
-    public AudiometryBusiness(
+    public AudiometryTextBusiness(
             SectionTextExtractor sectionTextExtractor,
             ExamRepository examRepository,
             ClinicalHistoryRepository clinicalHistoryRepository,

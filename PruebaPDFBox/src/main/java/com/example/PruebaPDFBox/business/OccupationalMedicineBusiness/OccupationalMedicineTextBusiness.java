@@ -1,4 +1,4 @@
-package com.example.PruebaPDFBox.business;
+package com.example.PruebaPDFBox.business.OccupationalMedicineBusiness;
 
 import com.example.PruebaPDFBox.model.Worker;
 import com.example.PruebaPDFBox.model.Exam;
@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
 import java.util.*;
 
 @Component
-public class OccupationalMedicineBusiness {
+public class OccupationalMedicineTextBusiness {
 
     private final SectionTextExtractor sectionTextExtractor;
     private final DataTypeRepository dataTypeRepository;
@@ -29,7 +29,7 @@ public class OccupationalMedicineBusiness {
     private final ExamRepository examRepository;
     private final HealthRequirementMapper healthRequirementMapper;
 
-    public OccupationalMedicineBusiness(
+    public OccupationalMedicineTextBusiness(
             SectionTextExtractor sectionTextExtractor,
             DataTypeRepository dataTypeRepository,
             DataValueRepository dataValueRepository,

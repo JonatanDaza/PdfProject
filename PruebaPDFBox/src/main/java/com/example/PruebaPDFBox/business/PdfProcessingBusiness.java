@@ -1,7 +1,10 @@
 package com.example.PruebaPDFBox.business;
 
+import com.example.PruebaPDFBox.business.AudiometryBusiness.AudiometryTextBusiness;
 import com.example.PruebaPDFBox.business.LaboratoryBusiness.LaboratoryResultImgBusiness;
 import com.example.PruebaPDFBox.business.LaboratoryBusiness.LaboratoryResultTextBusiness;
+import com.example.PruebaPDFBox.business.OccupationalMedicineBusiness.OccupationalMedicineTextBusiness;
+import com.example.PruebaPDFBox.business.OptometryBusiness.OptometryTextBusiness;
 import com.example.PruebaPDFBox.model.Worker;
 import com.example.PruebaPDFBox.record.AreaConfig;
 import com.example.PruebaPDFBox.record.FieldExtractionConfig;
@@ -10,7 +13,6 @@ import com.example.PruebaPDFBox.repository.WorkerRepository;
 import com.example.PruebaPDFBox.utilities.extractor.SectionExtractor.PdfSectionExtractor;
 import com.example.PruebaPDFBox.utilities.extractor.TextExtractor.SectionTextExtractor;
 import org.apache.pdfbox.pdmodel.PDDocument;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.*;
@@ -19,22 +21,22 @@ import java.util.*;
 public class PdfProcessingBusiness {
 
     private final PdfSectionExtractor pdfSectionExtractor;
-    private final OccupationalMedicineBusiness occupationalMedicineBusiness;
+    private final OccupationalMedicineTextBusiness occupationalMedicineTextBusiness;
     private final WorkerRepository workerRepository;
     private final SectionTextExtractor sectionTextExtractor;
-    private final AudiometryBusiness audiometryBusiness;
-    private final OptometryBusiness optometryBusiness;
+    private final AudiometryTextBusiness audiometryTextBusiness;
+    private final OptometryTextBusiness optometryTextBusiness;
     private final LaboratoryResultImgBusiness laboratoryResultImgBusiness;
     private final SpirometryBusiness spirometryBusiness;
     private final LaboratoryResultTextBusiness laboratoryResultTextBusiness;
 
-    public PdfProcessingBusiness(PdfSectionExtractor pdfSectionExtractor, OccupationalMedicineBusiness occupationalMedicineBusiness, WorkerRepository workerRepository, SectionTextExtractor sectionTextExtractor, AudiometryBusiness audiometryBusiness, OptometryBusiness optometryBusiness, LaboratoryResultImgBusiness laboratoryResultImgBusiness, SpirometryBusiness spirometryBusiness, LaboratoryResultTextBusiness laboratoryResultTextBusiness) {
+    public PdfProcessingBusiness(PdfSectionExtractor pdfSectionExtractor, OccupationalMedicineTextBusiness occupationalMedicineTextBusiness, WorkerRepository workerRepository, SectionTextExtractor sectionTextExtractor, AudiometryTextBusiness audiometryTextBusiness, OptometryTextBusiness optometryTextBusiness, LaboratoryResultImgBusiness laboratoryResultImgBusiness, SpirometryBusiness spirometryBusiness, LaboratoryResultTextBusiness laboratoryResultTextBusiness) {
         this.pdfSectionExtractor = pdfSectionExtractor;
-        this.occupationalMedicineBusiness = occupationalMedicineBusiness;
+        this.occupationalMedicineTextBusiness = occupationalMedicineTextBusiness;
         this.workerRepository = workerRepository;
         this.sectionTextExtractor = sectionTextExtractor;
-        this.audiometryBusiness = audiometryBusiness;
-        this.optometryBusiness = optometryBusiness;
+        this.audiometryTextBusiness = audiometryTextBusiness;
+        this.optometryTextBusiness = optometryTextBusiness;
         this.laboratoryResultImgBusiness = laboratoryResultImgBusiness;
         this.spirometryBusiness = spirometryBusiness;
         this.laboratoryResultTextBusiness = laboratoryResultTextBusiness;
@@ -58,19 +60,19 @@ public class PdfProcessingBusiness {
 
             for (Map.Entry<String, SectionArea> entry : sections.entrySet()) {
                 if ("OCCUPATIONAL_MEDICINE_LABEL".equals(entry.getKey())) {
-                    if (occupationalMedicineBusiness.process(document, entry.getValue(), worker, entry.getKey())) {
+                    if (occupationalMedicineTextBusiness.process(document, entry.getValue(), worker, entry.getKey())) {
                         examsProcessed++;
                     }
                 }
 
                 if ("AUDIOMETRY_LABEL".equals(entry.getKey())) {
-                    if (audiometryBusiness.process(document, entry.getValue(), worker, entry.getKey())) {
+                    if (audiometryTextBusiness.process(document, entry.getValue(), worker, entry.getKey())) {
                         examsProcessed++;
                     }
                 }
 
                 if ("OPTOMETRY_LABEL".equals(entry.getKey())) {
-                    if (optometryBusiness.process(document, entry.getValue(), worker, entry.getKey())) {
+                    if (optometryTextBusiness.process(document, entry.getValue(), worker, entry.getKey())) {
                         examsProcessed++;
                     }
                 }
@@ -80,23 +82,19 @@ public class PdfProcessingBusiness {
 //                        examsProcessed++;
 //                    }
 //                }
-                LoggerFactory.getLogger(PdfProcessingBusiness.class).debug("Procesando entrada: {}", entry.getKey());
 
                 if ("LABORATORY_LABEL".equals(entry.getKey())) {
-                    LoggerFactory.getLogger(PdfProcessingBusiness.class).info("LABORATORY_LABEL encontrado, procesando imagen de laboratorio");
                     if (laboratoryResultImgBusiness.process(document, entry.getValue(), entry.getKey(), worker)) {
                         examsProcessed++;
-                        LoggerFactory.getLogger(PdfProcessingBusiness.class).info("Examen de laboratorio (imagen) procesado exitosamente");
                     }
                 }
 
                 if ("LABORATORY_LABEL_TEXT".equals(entry.getKey())) {
-                    LoggerFactory.getLogger(PdfProcessingBusiness.class).info("LABORATORY_LABEL_TEXT encontrado, procesando texto de laboratorio");
                     if (laboratoryResultTextBusiness.process(document, entry.getValue(), entry.getKey(), worker)) {
                         examsProcessed++;
-                        LoggerFactory.getLogger(PdfProcessingBusiness.class).info("Examen de laboratorio (texto) procesado exitosamente");
                     }
-                }            }
+                }
+            }
 
             Map<String, Object> response = new HashMap<>();
             response.put("message", "PDF procesado correctamente");

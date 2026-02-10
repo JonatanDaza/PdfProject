@@ -1,4 +1,4 @@
-package com.example.PruebaPDFBox.business;
+package com.example.PruebaPDFBox.business.OptometryBusiness;
 
 import com.example.PruebaPDFBox.model.ClinicalHistory;
 import com.example.PruebaPDFBox.model.DataType;
@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 @Component
-public class OptometryBusiness {
+public class OptometryTextBusiness {
 
     private final SectionTextExtractor sectionTextExtractor;
     private final ExamRepository examRepository;
@@ -32,7 +32,7 @@ public class OptometryBusiness {
     private final DataTypeRepository dataTypeRepository;
     private final DataValueRepository dataValueRepository;
 
-    public OptometryBusiness(
+    public OptometryTextBusiness(
             SectionTextExtractor sectionTextExtractor,
             ExamRepository examRepository,
             ClinicalHistoryRepository clinicalHistoryRepository, RecommendationsConductMapper recommendationsConductMapper, DataTypeRepository dataTypeRepository, DataValueRepository dataValueRepository)
