@@ -2,35 +2,16 @@
 /* @import "~slick-carousel/slick/slick.css";
 @import "~slick-carousel/slick/slick-theme.css"; */
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* Animación para desplegables */
-@keyframes slide-down {
-  0% {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-slide-down {
-  animation: slide-down 0.2s ease-out;
-}
-
+@import "tailwindcss";
 
 @layer components {
   .arrow-button {
-    @apply p-2 transition-colors bg-gray-200 rounded hover:bg-gray-300;
+    @apply p-2 bg-gray-200 rounded hover:bg-gray-300 transition-colors;
   }
 
   .current-trimester,
   .current-week {
-    @apply text-lg font-bold;
+    @apply font-bold text-lg;
   }
 }
 
@@ -194,16 +175,14 @@
 }
 
 /* Estilos generales */
-@layer base {
-  body {
-    @apply text-black transition-colors duration-300 bg-white;
-  }
-
-  .dark body {
-    @apply text-white bg-gray-900;
-  }
+body {
+  @apply bg-white text-black transition-colors duration-300;
 }
 
+/* Modo oscuro - Siguiendo el patrón de las imágenes de referencia */
+.dark body {
+  @apply bg-gray-900 text-white;
+}
 
 /* Variables CSS para modo oscuro consistente */
 :root {
