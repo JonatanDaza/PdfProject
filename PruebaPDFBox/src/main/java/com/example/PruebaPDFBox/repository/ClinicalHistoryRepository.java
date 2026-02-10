@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -21,4 +22,22 @@ public interface ClinicalHistoryRepository  extends JpaRepository<ClinicalHistor
     @EntityGraph(attributePaths = {"exams", "exams.dataValues", "exams.worker"})
     @Query("SELECT ch FROM ClinicalHistory ch")
     Page<ClinicalHistory> findAllPaged(Pageable pageable);
+
+    @Query("""
+    SELECT ch.id
+    FROM ClinicalHistory ch
+    ORDER BY ch.id
+""")
+    Page<Long> findPagedIds(Pageable pageable);
+
+    @Query("""
+    SELECT DISTINCT ch
+    FROM ClinicalHistory ch
+    LEFT JOIN FETCH ch.exams e
+    LEFT JOIN FETCH e.dataValues dv
+    LEFT JOIN FETCH e.worker
+    WHERE ch.id IN :ids
+""")
+    List<ClinicalHistory> findByIdsWithDetails(@Param("ids") List<Long> ids);
+
 }

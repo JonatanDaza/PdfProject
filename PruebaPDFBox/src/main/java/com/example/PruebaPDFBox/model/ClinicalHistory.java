@@ -29,5 +29,5 @@ public class ClinicalHistory {
             orphanRemoval = true
     )
     @JsonManagedReference
-    private List<Exam> exams;
+    private Set<Exam> exams;
 }

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "cd PdfFront && npm run dev",
+    "dev": "cd PdfFront && npm install && npm run dev",
     "build": "cd PdfFront && npm run build",
     "start": "cd PdfFrontn && npm run start",
     "lint": "eslint"

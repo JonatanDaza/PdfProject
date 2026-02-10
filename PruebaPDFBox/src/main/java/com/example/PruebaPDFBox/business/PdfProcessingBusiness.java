@@ -1,5 +1,7 @@
 package com.example.PruebaPDFBox.business;
 
+import com.example.PruebaPDFBox.business.LaboratoryBusiness.LaboratoryResultImgBusiness;
+import com.example.PruebaPDFBox.business.LaboratoryBusiness.LaboratoryResultTextBusiness;
 import com.example.PruebaPDFBox.model.Worker;
 import com.example.PruebaPDFBox.record.AreaConfig;
 import com.example.PruebaPDFBox.record.FieldExtractionConfig;
@@ -8,6 +10,7 @@ import com.example.PruebaPDFBox.repository.WorkerRepository;
 import com.example.PruebaPDFBox.utilities.extractor.PdfSectionExtractor;
 import com.example.PruebaPDFBox.utilities.extractor.SectionTextExtractor;
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.*;
@@ -21,18 +24,20 @@ public class PdfProcessingBusiness {
     private final SectionTextExtractor sectionTextExtractor;
     private final AudiometryBusiness audiometryBusiness;
     private final OptometryBusiness optometryBusiness;
-    private final LaboratoryResultBusiness laboratoryResultBusiness;
+    private final LaboratoryResultImgBusiness laboratoryResultImgBusiness;
     private final SpirometryBusiness spirometryBusiness;
+    private final LaboratoryResultTextBusiness laboratoryResultTextBusiness;
 
-    public PdfProcessingBusiness(PdfSectionExtractor pdfSectionExtractor, OccupationalMedicineBusiness occupationalMedicineBusiness, WorkerRepository workerRepository, SectionTextExtractor sectionTextExtractor, AudiometryBusiness audiometryBusiness, OptometryBusiness optometryBusiness, LaboratoryResultBusiness laboratoryResultBusiness, SpirometryBusiness spirometryBusiness) {
+    public PdfProcessingBusiness(PdfSectionExtractor pdfSectionExtractor, OccupationalMedicineBusiness occupationalMedicineBusiness, WorkerRepository workerRepository, SectionTextExtractor sectionTextExtractor, AudiometryBusiness audiometryBusiness, OptometryBusiness optometryBusiness, LaboratoryResultImgBusiness laboratoryResultImgBusiness, SpirometryBusiness spirometryBusiness, LaboratoryResultTextBusiness laboratoryResultTextBusiness) {
         this.pdfSectionExtractor = pdfSectionExtractor;
         this.occupationalMedicineBusiness = occupationalMedicineBusiness;
         this.workerRepository = workerRepository;
         this.sectionTextExtractor = sectionTextExtractor;
         this.audiometryBusiness = audiometryBusiness;
         this.optometryBusiness = optometryBusiness;
-        this.laboratoryResultBusiness = laboratoryResultBusiness;
+        this.laboratoryResultImgBusiness = laboratoryResultImgBusiness;
         this.spirometryBusiness = spirometryBusiness;
+        this.laboratoryResultTextBusiness = laboratoryResultTextBusiness;
     }
 
     public Map<String, Object> processPdf(MultipartFile file) {
@@ -75,13 +80,23 @@ public class PdfProcessingBusiness {
 //                        examsProcessed++;
 //                    }
 //                }
+                LoggerFactory.getLogger(PdfProcessingBusiness.class).debug("Procesando entrada: {}", entry.getKey());
 
                 if ("LABORATORY_LABEL".equals(entry.getKey())) {
-                    if (laboratoryResultBusiness.process(document, entry.getValue(), entry.getKey(), worker)) {
+                    LoggerFactory.getLogger(PdfProcessingBusiness.class).info("LABORATORY_LABEL encontrado, procesando imagen de laboratorio");
+                    if (laboratoryResultImgBusiness.process(document, entry.getValue(), entry.getKey(), worker)) {
                         examsProcessed++;
+                        LoggerFactory.getLogger(PdfProcessingBusiness.class).info("Examen de laboratorio (imagen) procesado exitosamente");
                     }
                 }
-            }
+
+                if ("LABORATORY_LABEL_TEXT".equals(entry.getKey())) {
+                    LoggerFactory.getLogger(PdfProcessingBusiness.class).info("LABORATORY_LABEL_TEXT encontrado, procesando texto de laboratorio");
+                    if (laboratoryResultTextBusiness.process(document, entry.getValue(), entry.getKey(), worker)) {
+                        examsProcessed++;
+                        LoggerFactory.getLogger(PdfProcessingBusiness.class).info("Examen de laboratorio (texto) procesado exitosamente");
+                    }
+                }            }
 
             Map<String, Object> response = new HashMap<>();
             response.put("message", "PDF procesado correctamente");

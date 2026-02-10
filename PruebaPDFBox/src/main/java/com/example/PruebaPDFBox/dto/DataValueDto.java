@@ -12,7 +12,7 @@ import lombok.Setter;
 public class DataValueDto {
 
     private Long id;
-    private String value;
+    private Object value;
     private DataTypeDto dataType;
-    private ExamDto exam;
+//    private ExamDto exam;
 }

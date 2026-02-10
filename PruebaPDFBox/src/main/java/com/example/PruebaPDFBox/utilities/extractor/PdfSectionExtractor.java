@@ -18,7 +18,8 @@ public class PdfSectionExtractor {
             "OPTOMETRY_LABEL", Set.of("EXAMEN DE OPTOMETRIA", "EXAMEN DE CONSULTA DE OPTOMETRIA"),
             "OCCUPATIONAL_MEDICINE_LABEL", Set.of("EVALUACIÓN MEDICA OCUPACIONAL"),
             "AUDIOMETRY_LABEL", Set.of("AUDIOMETRÍA"),
-            "LABORATORY_LABEL", Set.of("RESULTADOS DEL LABORATORIO", "Laboratorio", "Laboratorio N°: 69.011", "Entidad:"),
+            "LABORATORY_LABEL", Set.of("RESULTADOS DEL LABORATORIO", "Laboratorio", "Laboratorio N°: 69.011"),
+            "LABORATORY_LABEL_TEXT", Set.of("INFORME DE RESULTADOS", "MATRICULA"),
             "PSYCHOMOTOR_LABEL", Set.of("Resumen de Resultados Test PSICO-MOTRÍZ"),
             "PSYCHOLOGY_LABEL", Set.of("PSICOLOGÍA OCUPACIONAL"),
             "SPIROMETRY_LABEL", Set.of("INFORME DE ESPIROMETRÍA")

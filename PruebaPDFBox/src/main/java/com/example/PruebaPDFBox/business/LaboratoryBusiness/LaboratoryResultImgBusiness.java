@@ -1,4 +1,4 @@
-package com.example.PruebaPDFBox.business;
+package com.example.PruebaPDFBox.business.LaboratoryBusiness;
 
 import com.example.PruebaPDFBox.model.ClinicalHistory;
 import com.example.PruebaPDFBox.model.DataType;
@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.util.*;
 
 @Component
-public class LaboratoryResultBusiness {
+public class LaboratoryResultImgBusiness {
 
     private final ImageTextExtractor imageTextExtractor;
     private final SectionTextExtractor sectionTextExtractor;
@@ -30,7 +30,7 @@ public class LaboratoryResultBusiness {
     private final DataTypeRepository dataTypeRepository;
     private final DataValueRepository dataValueRepository;
 
-    public LaboratoryResultBusiness(
+    public LaboratoryResultImgBusiness(
             ImageTextExtractor imageTextExtractor,
             SectionTextExtractor sectionTextExtractor,
             ExamRepository examRepository,
@@ -61,17 +61,8 @@ public class LaboratoryResultBusiness {
         List<Integer> targetPages = getPageRange(labSection);
         Map<String, String> results;
 
-        // Validar si hay imagen válida para extraer desde tabla
-        if (imageTextExtractor.hasValidTableImage(document, targetPages)) {
-            // Extraer desde imagen de tabla
-            List<String> labels = getLaboratoryLabels();
-            results = imageTextExtractor.extractTextFromTable(document, targetPages, labels);
-        } else {
-            // Extraer desde texto directo
-            Map<String, AreaConfig> config = buildLaboratoryConfig();
-            List<FieldExtractionConfig> fields = buildFieldConfigurations(config);
-            results = sectionTextExtractor.extractMultipleValues(document, fields, labSection);
-        }
+        List<String> labels = getLaboratoryLabels();
+        results = imageTextExtractor.extractTextFromTable(document, targetPages, labels);
 
         Exam exam = new Exam();
         exam.setExamName(examName);
@@ -177,46 +168,5 @@ public class LaboratoryResultBusiness {
                 "COLESTEROL LDL",
                 "TRIGLICERIDOS"
         );
-    }
-
-    private List<FieldExtractionConfig> buildFieldConfigurations(Map<String, AreaConfig> config) {
-        List<FieldExtractionConfig> fields = new ArrayList<>();
-
-        fields.add(new FieldExtractionConfig("HEMATOCRITO", "HEMATOCRITO",
-                config.get("HEMATOCRITO"), FieldExtractionConfig.ExtractionStrategy.HORIZONTAL));
-        fields.add(new FieldExtractionConfig("HEMOGLOBINA", "HEMOGLOBINA",
-                config.get("HEMOGLOBINA"), FieldExtractionConfig.ExtractionStrategy.HORIZONTAL));
-        fields.add(new FieldExtractionConfig("RTO.BLANCOS", "RTO.BLANCOS",
-                config.get("RTO.BLANCOS"), FieldExtractionConfig.ExtractionStrategy.HORIZONTAL));
-        fields.add(new FieldExtractionConfig("RTO.PLAQUETAS", "RTO.PLAQUETAS",
-                config.get("RTO.PLAQUETAS"), FieldExtractionConfig.ExtractionStrategy.HORIZONTAL));
-        fields.add(new FieldExtractionConfig("GLICEMIA", "GLICEMIA",
-                config.get("GLICEMIA"), FieldExtractionConfig.ExtractionStrategy.HORIZONTAL));
-        fields.add(new FieldExtractionConfig("COLESTEROL TOTAL", "COLESTEROL TOTAL",
-                config.get("COLESTEROL TOTAL"), FieldExtractionConfig.ExtractionStrategy.HORIZONTAL));
-        fields.add(new FieldExtractionConfig("COLESTEROL HDL", "COLESTEROL HDL",
-                config.get("COLESTEROL HDL"), FieldExtractionConfig.ExtractionStrategy.HORIZONTAL));
-        fields.add(new FieldExtractionConfig("COLESTEROL LDL", "COLESTEROL LDL",
-                config.get("COLESTEROL LDL"), FieldExtractionConfig.ExtractionStrategy.HORIZONTAL));
-        fields.add(new FieldExtractionConfig("TRIGLICERIDOS", "TRIGLICERIDOS",
-                config.get("TRIGLICERIDOS"), FieldExtractionConfig.ExtractionStrategy.HORIZONTAL));
-
-        return fields;
-    }
-
-    private Map<String, AreaConfig> buildLaboratoryConfig() {
-        Map<String, AreaConfig> config = new HashMap<>();
-
-        config.put("HEMATOCRITO", new AreaConfig(40, 80, 12));
-        config.put("HEMOGLOBINA", new AreaConfig(40, 80, 12));
-        config.put("RTO.BLANCOS", new AreaConfig(40, 80, 12));
-        config.put("RTO.PLAQUETAS", new AreaConfig(40, 80, 12));
-        config.put("GLICEMIA", new AreaConfig(40, 80, 12));
-        config.put("COLESTEROL TOTAL", new AreaConfig(40, 100, 12));
-        config.put("COLESTEROL HDL", new AreaConfig(40, 100, 12));
-        config.put("COLESTEROL LDL", new AreaConfig(40, 100, 12));
-        config.put("TRIGLICERIDOS", new AreaConfig(40, 80, 12));
-
-        return config;
     }
 }
