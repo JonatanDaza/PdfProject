@@ -2,11 +2,15 @@ package com.example.PruebaPDFBox.utilities.Seeders;
 
 import com.example.PruebaPDFBox.model.DataType;
 import com.example.PruebaPDFBox.repository.DataTypeRepository;
-import org.springframework.boot.CommandLineRunner;
+import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Arrays;
+import java.util.List;
 
 @Component
-public class DataTypeSeeder implements CommandLineRunner {
+public class DataTypeSeeder {
 
     private final DataTypeRepository dataTypeRepository;
 
@@ -14,46 +18,37 @@ public class DataTypeSeeder implements CommandLineRunner {
         this.dataTypeRepository = dataTypeRepository;
     }
 
-    @Override
-    public void run(String... args) {
-        createTypesNotExists("Tiempo de Exposición");
-        createTypesNotExists("Actividades Manuales");
-        createTypesNotExists("Ejercicios o Deportes");
-        createTypesNotExists("Consumidor de Alcohol");
-        createTypesNotExists("Fumador Actual");
-        createTypesNotExists("Tensión Arterial");
-        createTypesNotExists("Frecuencia Cardíaca");
-        createTypesNotExists("Frecuencia Respiratoria");
-        createTypesNotExists("Lateralidad Dominante");
-        createTypesNotExists("Perímetro Abdominal");
-        createTypesNotExists("Peso");
-        createTypesNotExists("Talla");
-        createTypesNotExists("IMC");
-        createTypesNotExists("Diagnósticos");
-        createTypesNotExists("Concepto Ocupacional");
-        createTypesNotExists("Código de Examen");
-        createTypesNotExists("Requisitos de Salud");
-        createTypesNotExists("Oído derecho");
-        createTypesNotExists("Oído izquierdo");
-        createTypesNotExists("Nombre del Diagnóstico");
-        createTypesNotExists("Ponderado Decibelios");
-        createTypesNotExists("Recomendaciones");
-        createTypesNotExists("Observaciones");
-        createTypesNotExists("DIAGNÓSTICO");
-        createTypesNotExists("Conducta Y/O Recomendaciones");
-        createTypesNotExists("HEMATOCRITO");
-        createTypesNotExists("HEMOGLOBINA");
-        createTypesNotExists("RTO.BLANCOS");
-        createTypesNotExists("RTO.PLAQUETAS");
-        createTypesNotExists("GLICEMIA");
-        createTypesNotExists("COLESTEROL TOTAL");
-        createTypesNotExists("COLESTEROL HDL");
-        createTypesNotExists("COLESTEROL LDL");
-        createTypesNotExists("TRIGLICERIDOS");
-        createTypesNotExists("Interpretación");
+    @PostConstruct
+    @Transactional
+    public void init() {
+        // Verifica si la tabla está vacía
+        if (dataTypeRepository.count() == 0) {
+            seedDataTypes();
+            System.out.println("\n");
+        } else {
+            System.out.println("\n");
+        }
     }
 
-    public void createTypesNotExists(String name) {
+    private void seedDataTypes() {
+        List<String> typeNames = Arrays.asList(
+                "Tiempo de Exposición", "Actividades Manuales",
+                "Ejercicios o Deportes", "Consumidor de Alcohol",
+                "Fumador Actual", "Tensión Arterial", "Frecuencia Cardíaca",
+                "Frecuencia Respiratoria", "Lateralidad Dominante", "Perímetro Abdominal",
+                "Peso", "Talla", "IMC", "Diagnósticos", "Concepto Ocupacional",
+                "Código de Examen", "Requisitos de Salud", "Oído derecho",
+                "Oído izquierdo", "Nombre del Diagnóstico", "Ponderado Decibelios",
+                "Recomendaciones", "Observaciones", "DIAGNÓSTICO",
+                "Conducta Y/O Recomendaciones", "HEMATOCRITO", "HEMOGLOBINA",
+                "RTO.BLANCOS", "RTO.PLAQUETAS", "GLICEMIA", "COLESTEROL TOTAL",
+                "COLESTEROL HDL", "COLESTEROL LDL", "TRIGLICERIDOS", "Interpretación"
+        );
+
+        typeNames.forEach(this::createTypeIfNotExists);
+    }
+
+    private void createTypeIfNotExists(String name) {
         if (!dataTypeRepository.existsByNameIgnoreCase(name)) {
             DataType type = new DataType();
             type.setName(name);

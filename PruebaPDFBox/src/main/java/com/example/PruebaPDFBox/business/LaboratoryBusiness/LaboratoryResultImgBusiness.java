@@ -11,7 +11,7 @@ import com.example.PruebaPDFBox.repository.DataTypeRepository;
 import com.example.PruebaPDFBox.repository.DataValueRepository;
 import com.example.PruebaPDFBox.repository.ExamRepository;
 import com.example.PruebaPDFBox.utilities.extractor.TextExtractor.ImageTextExtractor;
-import com.example.PruebaPDFBox.utilities.extractor.TextExtractor.SectionTextExtractor;
+import com.example.PruebaPDFBox.utilities.extractor.TextExtractor.PlainTextExtractor;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.stereotype.Component;
 
@@ -22,7 +22,7 @@ import java.util.*;
 public class LaboratoryResultImgBusiness {
 
     private final ImageTextExtractor imageTextExtractor;
-    private final SectionTextExtractor sectionTextExtractor;
+    private final PlainTextExtractor plainTextExtractor;
     private final ExamRepository examRepository;
     private final ClinicalHistoryRepository clinicalHistoryRepository;
     private final DataTypeRepository dataTypeRepository;
@@ -30,11 +30,11 @@ public class LaboratoryResultImgBusiness {
 
     public LaboratoryResultImgBusiness(
             ImageTextExtractor imageTextExtractor,
-            SectionTextExtractor sectionTextExtractor,
+            PlainTextExtractor plainTextExtractor,
             ExamRepository examRepository,
             ClinicalHistoryRepository clinicalHistoryRepository, DataTypeRepository dataTypeRepository, DataValueRepository dataValueRepository) {
         this.imageTextExtractor = imageTextExtractor;
-        this.sectionTextExtractor = sectionTextExtractor;
+        this.plainTextExtractor = plainTextExtractor;
         this.examRepository = examRepository;
         this.clinicalHistoryRepository = clinicalHistoryRepository;
         this.dataTypeRepository = dataTypeRepository;
@@ -43,7 +43,7 @@ public class LaboratoryResultImgBusiness {
 
     public boolean process(PDDocument document, SectionArea labSection, String examName, Worker worker) throws IOException {
 
-        String examDate = sectionTextExtractor.extractExamDate(document, labSection);
+        String examDate = plainTextExtractor.extractExamDate(document, labSection);
 
         if (examDate == null || examDate.isEmpty()) {
             return false;

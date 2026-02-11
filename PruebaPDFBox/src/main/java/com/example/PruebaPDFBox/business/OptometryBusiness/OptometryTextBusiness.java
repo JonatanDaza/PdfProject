@@ -12,7 +12,7 @@ import com.example.PruebaPDFBox.repository.ClinicalHistoryRepository;
 import com.example.PruebaPDFBox.repository.DataTypeRepository;
 import com.example.PruebaPDFBox.repository.DataValueRepository;
 import com.example.PruebaPDFBox.repository.ExamRepository;
-import com.example.PruebaPDFBox.utilities.extractor.TextExtractor.SectionTextExtractor;
+import com.example.PruebaPDFBox.utilities.extractor.TextExtractor.PlainTextExtractor;
 import com.example.PruebaPDFBox.utilities.mapper.MapperJsons.RecommendationsConductMapper;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.stereotype.Component;
@@ -25,7 +25,7 @@ import java.util.Map;
 @Component
 public class OptometryTextBusiness {
 
-    private final SectionTextExtractor sectionTextExtractor;
+    private final PlainTextExtractor plainTextExtractor;
     private final ExamRepository examRepository;
     private final ClinicalHistoryRepository clinicalHistoryRepository;
     private final RecommendationsConductMapper recommendationsConductMapper;
@@ -33,11 +33,11 @@ public class OptometryTextBusiness {
     private final DataValueRepository dataValueRepository;
 
     public OptometryTextBusiness(
-            SectionTextExtractor sectionTextExtractor,
+            PlainTextExtractor plainTextExtractor,
             ExamRepository examRepository,
             ClinicalHistoryRepository clinicalHistoryRepository, RecommendationsConductMapper recommendationsConductMapper, DataTypeRepository dataTypeRepository, DataValueRepository dataValueRepository)
     {
-        this.sectionTextExtractor = sectionTextExtractor;
+        this.plainTextExtractor = plainTextExtractor;
         this.examRepository = examRepository;
         this.clinicalHistoryRepository = clinicalHistoryRepository;
         this.recommendationsConductMapper = recommendationsConductMapper;
@@ -55,9 +55,9 @@ public class OptometryTextBusiness {
         Map<String, AreaConfig> config = buildOptometryConfig();
 
         List<FieldExtractionConfig> fields = buildFieldConfigurations(config);
-        Map<String, String> data = sectionTextExtractor.extractMultipleValues(document, fields, section);
+        Map<String, String> data = plainTextExtractor.extractMultipleValues(document, fields, section);
 
-        String examDate = sectionTextExtractor.extractDate(data.get("fecha"));
+        String examDate = plainTextExtractor.extractDate(data.get("fecha"));
 
         if (examDate == null || examDate.trim().isEmpty()) {
             return false;
@@ -82,26 +82,18 @@ public class OptometryTextBusiness {
                 data.get("diagnostico"),
                 exam);
 
-        String rawRecommendationsConduct = sectionTextExtractor.extractTextBetweenLabels(
+        String rawRecommendationsConduct = plainTextExtractor.extractTextBetweenLabels(
                 document, "CONDUCTA Y/O RECOMENDACIONES", "OTRAS OBSERVACIONES Y RECOMENDACIONES:", section
         );
         String recommendationsConductJson = recommendationsConductMapper.parseToJson(rawRecommendationsConduct);
         createDataValue("Conducta Y/O Recomendaciones", recommendationsConductJson, exam);
 
+//        createDataValue("Código de Examen",
+//                data.get("CÓDIGO"),
+//                exam);
 
         examRepository.save(exam);
         return true;
-    }
-
-    private List<FieldExtractionConfig> buildFieldConfigurations(Map<String, AreaConfig> config) {
-        List<FieldExtractionConfig> fields = new ArrayList<>();
-
-        fields.add(new FieldExtractionConfig("Fecha:", "fecha",
-                config.get("Fecha:"), FieldExtractionConfig.ExtractionStrategy.HORIZONTAL));
-        fields.add(new FieldExtractionConfig("DIAGNÓSTICO", "diagnostico",
-                config.get("DIAGNÓSTICO"), FieldExtractionConfig.ExtractionStrategy.EXACT_MATCH));
-
-        return fields;
     }
 
     private void createDataValue(String typeName, String value, Exam exam) {
@@ -124,11 +116,26 @@ public class OptometryTextBusiness {
         dataValueRepository.save(dataValue);
     }
 
+    private List<FieldExtractionConfig> buildFieldConfigurations(Map<String, AreaConfig> config) {
+        List<FieldExtractionConfig> fields = new ArrayList<>();
+
+        fields.add(new FieldExtractionConfig("Fecha:", "fecha",
+                config.get("Fecha:"), FieldExtractionConfig.ExtractionStrategy.HORIZONTAL));
+        fields.add(new FieldExtractionConfig("DIAGNÓSTICO", "diagnostico",
+                config.get("DIAGNÓSTICO"), FieldExtractionConfig.ExtractionStrategy.EXACT_MATCH));
+//        fields.add(new FieldExtractionConfig("CÓDIGO", "CÓDIGO",
+//                config.get("CÓDIGO"), FieldExtractionConfig.ExtractionStrategy.VERTICAL));
+
+
+        return fields;
+    }
+
     private Map<String, AreaConfig> buildOptometryConfig() {
         Map<String, AreaConfig> config = new HashMap<>();
 
         config.put("Fecha:", new AreaConfig(0, 100, 12));
         config.put("DIAGNÓSTICO", new AreaConfig(0, 100, 21));
+//        config.put("CÓDIGO", new AreaConfig(0, 60, 20));
 
         return config;
     }

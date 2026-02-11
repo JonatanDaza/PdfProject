@@ -8,7 +8,7 @@ import com.example.PruebaPDFBox.repository.ClinicalHistoryRepository;
 import com.example.PruebaPDFBox.repository.DataTypeRepository;
 import com.example.PruebaPDFBox.repository.DataValueRepository;
 import com.example.PruebaPDFBox.repository.ExamRepository;
-import com.example.PruebaPDFBox.utilities.extractor.TextExtractor.SectionTextExtractor;
+import com.example.PruebaPDFBox.utilities.extractor.TextExtractor.PlainTextExtractor;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.stereotype.Component;
 
@@ -20,18 +20,18 @@ import java.util.Map;
 @Component
 public class SpirometryBusiness {
 
-    private final SectionTextExtractor sectionTextExtractor;
+    private final PlainTextExtractor plainTextExtractor;
     private final ExamRepository examRepository;
     private final ClinicalHistoryRepository clinicalHistoryRepository;
     private final DataTypeRepository dataTypeRepository;
     private final DataValueRepository dataValueRepository;
 
     public SpirometryBusiness(
-            SectionTextExtractor sectionTextExtractor,
+            PlainTextExtractor plainTextExtractor,
             ExamRepository examRepository,
             ClinicalHistoryRepository clinicalHistoryRepository,
             DataTypeRepository dataTypeRepository, DataValueRepository dataValueRepository) {
-        this.sectionTextExtractor = sectionTextExtractor;
+        this.plainTextExtractor = plainTextExtractor;
         this.examRepository = examRepository;
         this.clinicalHistoryRepository = clinicalHistoryRepository;
         this.dataTypeRepository = dataTypeRepository;
@@ -48,9 +48,9 @@ public class SpirometryBusiness {
         Map<String, AreaConfig> config = buildSpirometryConfig();
 
         List<FieldExtractionConfig> fields = buildFieldConfigurations(config);
-        Map<String, String> data = sectionTextExtractor.extractMultipleValues(document, fields, section);
+        Map<String, String> data = plainTextExtractor.extractMultipleValues(document, fields, section);
 
-        String examDate = sectionTextExtractor.extractDate(data.get("fecha"));
+        String examDate = plainTextExtractor.extractDate(data.get("fecha"));
 
         if (examDate == null || examDate.trim().isEmpty()) {
             return false;

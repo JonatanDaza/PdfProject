@@ -12,7 +12,7 @@ import com.example.PruebaPDFBox.repository.DataTypeRepository;
 import com.example.PruebaPDFBox.repository.DataValueRepository;
 import com.example.PruebaPDFBox.repository.ClinicalHistoryRepository;
 import com.example.PruebaPDFBox.repository.ExamRepository;
-import com.example.PruebaPDFBox.utilities.extractor.TextExtractor.SectionTextExtractor;
+import com.example.PruebaPDFBox.utilities.extractor.TextExtractor.PlainTextExtractor;
 import com.example.PruebaPDFBox.utilities.mapper.MapperJsons.HealthRequirementMapper;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.stereotype.Component;
@@ -22,7 +22,7 @@ import java.util.*;
 @Component
 public class OccupationalMedicineTextBusiness {
 
-    private final SectionTextExtractor sectionTextExtractor;
+    private final PlainTextExtractor plainTextExtractor;
     private final DataTypeRepository dataTypeRepository;
     private final DataValueRepository dataValueRepository;
     private final ClinicalHistoryRepository clinicalHistoryRepository;
@@ -30,14 +30,14 @@ public class OccupationalMedicineTextBusiness {
     private final HealthRequirementMapper healthRequirementMapper;
 
     public OccupationalMedicineTextBusiness(
-            SectionTextExtractor sectionTextExtractor,
+            PlainTextExtractor plainTextExtractor,
             DataTypeRepository dataTypeRepository,
             DataValueRepository dataValueRepository,
             ClinicalHistoryRepository clinicalHistoryRepository,
             ExamRepository examRepository,
             HealthRequirementMapper healthRequirementMapper
     ) {
-        this.sectionTextExtractor = sectionTextExtractor;
+        this.plainTextExtractor = plainTextExtractor;
         this.dataTypeRepository = dataTypeRepository;
         this.dataValueRepository = dataValueRepository;
         this.clinicalHistoryRepository = clinicalHistoryRepository;
@@ -54,9 +54,9 @@ public class OccupationalMedicineTextBusiness {
 
         Map<String, AreaConfig> config = buildEvaluationConfig();
         List<FieldExtractionConfig> fields = buildFieldConfigurations(config);
-        Map<String, String> data = sectionTextExtractor.extractMultipleValues(document, fields, section);
+        Map<String, String> data = plainTextExtractor.extractMultipleValues(document, fields, section);
 
-        String examDate = sectionTextExtractor.extractDate(data.get("fecha"));
+        String examDate = plainTextExtractor.extractDate(data.get("fecha"));
 
         if (examDate == null || examDate.trim().isEmpty()) {
             return false;
@@ -78,7 +78,7 @@ public class OccupationalMedicineTextBusiness {
         exam = examRepository.save(exam);
 
         createDataValue("Tiempo de Exposición",
-                sectionTextExtractor.extractOnlyNumbers(data.get("tiempoExposicion")),
+                plainTextExtractor.extractOnlyNumbers(data.get("tiempoExposicion")),
                 exam);
 
         createDataValue("Actividades Manuales",
@@ -102,11 +102,11 @@ public class OccupationalMedicineTextBusiness {
                 exam);
 
         createDataValue("Frecuencia Cardíaca",
-                sectionTextExtractor.extractOnlyNumbers(data.get("frecuenciaCardiaca")),
+                plainTextExtractor.extractOnlyNumbers(data.get("frecuenciaCardiaca")),
                 exam);
 
         createDataValue("Frecuencia Respiratoria",
-                sectionTextExtractor.extractOnlyNumbers(data.get("frecuenciaRespiratoria")),
+                plainTextExtractor.extractOnlyNumbers(data.get("frecuenciaRespiratoria")),
                 exam);
 
         createDataValue("Lateralidad Dominante",
@@ -114,15 +114,15 @@ public class OccupationalMedicineTextBusiness {
                 exam);
 
         createDataValue("Perímetro Abdominal",
-                sectionTextExtractor.extractOnlyNumbers(data.get("perimetroAbdominal")),
+                plainTextExtractor.extractOnlyNumbers(data.get("perimetroAbdominal")),
                 exam);
 
         createDataValue("Peso",
-                sectionTextExtractor.extractOnlyNumbers(data.get("peso")),
+                plainTextExtractor.extractOnlyNumbers(data.get("peso")),
                 exam);
 
         createDataValue("Talla",
-                sectionTextExtractor.extractOnlyNumbers(data.get("talla")),
+                plainTextExtractor.extractOnlyNumbers(data.get("talla")),
                 exam);
 
         createDataValue("IMC",
@@ -141,7 +141,7 @@ public class OccupationalMedicineTextBusiness {
                 data.get("codigo"),
                 exam);
 
-        String rawHealthRequirements = sectionTextExtractor.extractTextBetweenLabels(
+        String rawHealthRequirements = plainTextExtractor.extractTextBetweenLabels(
                 document, "Cumple", "Restricciones Laborales", section
         );
         String healthRequirementsJson = healthRequirementMapper.parseToJson(rawHealthRequirements);

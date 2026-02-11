@@ -12,7 +12,7 @@ import com.example.PruebaPDFBox.repository.ClinicalHistoryRepository;
 import com.example.PruebaPDFBox.repository.DataTypeRepository;
 import com.example.PruebaPDFBox.repository.DataValueRepository;
 import com.example.PruebaPDFBox.repository.ExamRepository;
-import com.example.PruebaPDFBox.utilities.extractor.TextExtractor.SectionTextExtractor;
+import com.example.PruebaPDFBox.utilities.extractor.TextExtractor.PlainTextExtractor;
 import com.example.PruebaPDFBox.utilities.mapper.MapperJsons.ObservationsMapper;
 import com.example.PruebaPDFBox.utilities.mapper.MapperJsons.RecommendationMapper;
 import com.example.PruebaPDFBox.utilities.mapper.MapperJsons.WeightedDecibelsMapper;
@@ -27,7 +27,7 @@ import java.util.Map;
 @Component
 public class AudiometryTextBusiness {
 
-    private final SectionTextExtractor sectionTextExtractor;
+    private final PlainTextExtractor plainTextExtractor;
     private final ExamRepository examRepository;
     private final ClinicalHistoryRepository clinicalHistoryRepository;
     private final WeightedDecibelsMapper weightedDecibelsMapper;
@@ -37,13 +37,15 @@ public class AudiometryTextBusiness {
     private final DataValueRepository dataValueRepository;
 
     public AudiometryTextBusiness(
-            SectionTextExtractor sectionTextExtractor,
+            PlainTextExtractor plainTextExtractor,
             ExamRepository examRepository,
             ClinicalHistoryRepository clinicalHistoryRepository,
             WeightedDecibelsMapper weightedDecibelsMapper,
             ObservationsMapper observationsMapper,
-            RecommendationMapper recommendationMapper, DataTypeRepository dataTypeRepository, DataValueRepository dataValueRepository) {
-        this.sectionTextExtractor = sectionTextExtractor;
+            RecommendationMapper recommendationMapper,
+            DataTypeRepository dataTypeRepository,
+            DataValueRepository dataValueRepository) {
+        this.plainTextExtractor = plainTextExtractor;
         this.examRepository = examRepository;
         this.clinicalHistoryRepository = clinicalHistoryRepository;
         this.weightedDecibelsMapper = weightedDecibelsMapper;
@@ -63,10 +65,10 @@ public class AudiometryTextBusiness {
         Map<String, AreaConfig> config = buildAudiometryConfig();
 
         List<FieldExtractionConfig> fields = buildFieldConfigurations(config);
-        Map<String, String> data = sectionTextExtractor.extractMultipleValues(document, fields, section);
+        Map<String, String> data = plainTextExtractor.extractMultipleValues(document, fields, section);
 
         // Extraccion de fecha
-        String examDate = sectionTextExtractor.extractDate(data.get("fecha"));
+        String examDate = plainTextExtractor.extractDate(data.get("fecha"));
 
         if (examDate == null || examDate.trim().isEmpty()) {
             return false;
@@ -96,23 +98,27 @@ public class AudiometryTextBusiness {
                 exam);
 
         // Recorridos especiales
-        String rawWeightedDecibels = sectionTextExtractor.extractTextBetweenLabels(
+        String rawWeightedDecibels = plainTextExtractor.extractTextBetweenLabels(
                 document, "dB(A)", "SEVERIDAD", section
         );
         String weightedDecibelsJson = weightedDecibelsMapper.parseToJson(rawWeightedDecibels);
         createDataValue("Ponderado Decibelios", weightedDecibelsJson, exam);
 
-        String rawRecommendations = sectionTextExtractor.extractTextBetweenLabels(
+        String rawRecommendations = plainTextExtractor.extractTextBetweenLabels(
                 document, "OBSERVACION", "Observaciones", section
         );
         String recommendationsJson = recommendationMapper.parseToJson(rawRecommendations);
         createDataValue("Recomendaciones", recommendationsJson, exam);
 
-        String rawObservations = sectionTextExtractor.extractTextBetweenLabels(
+        String rawObservations = plainTextExtractor.extractTextBetweenLabels(
                 document, "Observaciones", "FONOAUDIÓLOGO", section
         );
         String observationsJson = observationsMapper.parseToJson(rawObservations);
         createDataValue("Observaciones", observationsJson, exam);
+
+//        createDataValue("Código de Examen",
+//                data.get("Código"),
+//                exam);
 
         examRepository.save(exam);
         return true;
@@ -149,6 +155,8 @@ public class AudiometryTextBusiness {
                 config.get("Oído izquierdo:"), FieldExtractionConfig.ExtractionStrategy.HORIZONTAL));
         fields.add(new FieldExtractionConfig("Nombre del Diagnóstico", "diagnosticos",
                 config.get("Nombre del Diagnóstico"), FieldExtractionConfig.ExtractionStrategy.VERTICAL));
+//        fields.add(new FieldExtractionConfig("Código", "Código",
+//                config.get("Código"), FieldExtractionConfig.ExtractionStrategy.VERTICAL));
 
         return fields;
     }
@@ -162,6 +170,7 @@ public class AudiometryTextBusiness {
         config.put("Oído derecho:", new AreaConfig(0, 200, 21));
         config.put("Oído izquierdo:", new AreaConfig(0, 200, 21));
         config.put("Nombre del Diagnóstico", new AreaConfig(60, 130, 21));
+//        config.put("Código", new AreaConfig(0, 60, 20));
 
         return config;
     }

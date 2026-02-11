@@ -11,7 +11,7 @@ import com.example.PruebaPDFBox.record.FieldExtractionConfig;
 import com.example.PruebaPDFBox.record.SectionArea;
 import com.example.PruebaPDFBox.repository.WorkerRepository;
 import com.example.PruebaPDFBox.utilities.extractor.SectionExtractor.PdfSectionExtractor;
-import com.example.PruebaPDFBox.utilities.extractor.TextExtractor.SectionTextExtractor;
+import com.example.PruebaPDFBox.utilities.extractor.TextExtractor.PlainTextExtractor;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,18 +23,18 @@ public class PdfProcessingBusiness {
     private final PdfSectionExtractor pdfSectionExtractor;
     private final OccupationalMedicineTextBusiness occupationalMedicineTextBusiness;
     private final WorkerRepository workerRepository;
-    private final SectionTextExtractor sectionTextExtractor;
+    private final PlainTextExtractor plainTextExtractor;
     private final AudiometryTextBusiness audiometryTextBusiness;
     private final OptometryTextBusiness optometryTextBusiness;
     private final LaboratoryResultImgBusiness laboratoryResultImgBusiness;
     private final SpirometryBusiness spirometryBusiness;
     private final LaboratoryResultTextBusiness laboratoryResultTextBusiness;
 
-    public PdfProcessingBusiness(PdfSectionExtractor pdfSectionExtractor, OccupationalMedicineTextBusiness occupationalMedicineTextBusiness, WorkerRepository workerRepository, SectionTextExtractor sectionTextExtractor, AudiometryTextBusiness audiometryTextBusiness, OptometryTextBusiness optometryTextBusiness, LaboratoryResultImgBusiness laboratoryResultImgBusiness, SpirometryBusiness spirometryBusiness, LaboratoryResultTextBusiness laboratoryResultTextBusiness) {
+    public PdfProcessingBusiness(PdfSectionExtractor pdfSectionExtractor, OccupationalMedicineTextBusiness occupationalMedicineTextBusiness, WorkerRepository workerRepository, PlainTextExtractor plainTextExtractor, AudiometryTextBusiness audiometryTextBusiness, OptometryTextBusiness optometryTextBusiness, LaboratoryResultImgBusiness laboratoryResultImgBusiness, SpirometryBusiness spirometryBusiness, LaboratoryResultTextBusiness laboratoryResultTextBusiness) {
         this.pdfSectionExtractor = pdfSectionExtractor;
         this.occupationalMedicineTextBusiness = occupationalMedicineTextBusiness;
         this.workerRepository = workerRepository;
-        this.sectionTextExtractor = sectionTextExtractor;
+        this.plainTextExtractor = plainTextExtractor;
         this.audiometryTextBusiness = audiometryTextBusiness;
         this.optometryTextBusiness = optometryTextBusiness;
         this.laboratoryResultImgBusiness = laboratoryResultImgBusiness;
@@ -119,7 +119,7 @@ public class PdfProcessingBusiness {
             try {
                 List<FieldExtractionConfig> fields = buildWorkerFieldConfigurations(config);
 
-                Map<String, String> sectionData = sectionTextExtractor.extractMultipleValues(document, fields, section);
+                Map<String, String> sectionData = plainTextExtractor.extractMultipleValues(document, fields, section);
 
                 for (Map.Entry<String, String> dataEntry : sectionData.entrySet()) {
                     String key = dataEntry.getKey();
@@ -146,7 +146,7 @@ public class PdfProcessingBusiness {
         Worker worker = new Worker();
         worker.setCC(cc);
         worker.setGender(extractedData.get("Genero:"));
-        worker.setAge(sectionTextExtractor.extractFirstNumber(extractedData.get("Edad:")));
+        worker.setAge(plainTextExtractor.extractFirstNumber(extractedData.get("Edad:")));
         worker.setMaritalStatus(extractedData.get("Estado Civil:"));
         worker.setEducationalLevel(extractedData.get("Nivel Educativo:"));
 

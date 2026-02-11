@@ -17,11 +17,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Component
-public class SectionTextExtractor {
+public class PlainTextExtractor {
     public Map<String, String> extractMultipleValues(
-            PDDocument document,
-            List<FieldExtractionConfig> fields,
-            SectionArea section
+        PDDocument document,
+        List<FieldExtractionConfig> fields,
+        SectionArea section
     ) throws IOException {
 
         Map<String, String> results = new HashMap<>();

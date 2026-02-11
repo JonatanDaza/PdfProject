@@ -8,7 +8,7 @@ import com.example.PruebaPDFBox.repository.ClinicalHistoryRepository;
 import com.example.PruebaPDFBox.repository.DataTypeRepository;
 import com.example.PruebaPDFBox.repository.DataValueRepository;
 import com.example.PruebaPDFBox.repository.ExamRepository;
-import com.example.PruebaPDFBox.utilities.extractor.TextExtractor.SectionTextExtractor;
+import com.example.PruebaPDFBox.utilities.extractor.TextExtractor.PlainTextExtractor;
 import com.example.PruebaPDFBox.utilities.mapper.MapperJsons.MorphologyStudyMapper;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.stereotype.Component;
@@ -19,7 +19,7 @@ import java.util.*;
 @Component
 public class LaboratoryResultTextBusiness {
 
-    private final SectionTextExtractor sectionTextExtractor;
+    private final PlainTextExtractor plainTextExtractor;
     private final ExamRepository examRepository;
     private final ClinicalHistoryRepository clinicalHistoryRepository;
     private final DataTypeRepository dataTypeRepository;
@@ -27,13 +27,13 @@ public class LaboratoryResultTextBusiness {
     private final MorphologyStudyMapper morphologyStudyMapper;
 
     public LaboratoryResultTextBusiness(
-            SectionTextExtractor sectionTextExtractor,
+            PlainTextExtractor plainTextExtractor,
             ExamRepository examRepository,
             ClinicalHistoryRepository clinicalHistoryRepository,
             DataTypeRepository dataTypeRepository,
             DataValueRepository dataValueRepository,
             MorphologyStudyMapper morphologyStudyMapper) {
-        this.sectionTextExtractor = sectionTextExtractor;
+        this.plainTextExtractor = plainTextExtractor;
         this.examRepository = examRepository;
         this.clinicalHistoryRepository = clinicalHistoryRepository;
         this.dataTypeRepository = dataTypeRepository;
@@ -46,9 +46,9 @@ public class LaboratoryResultTextBusiness {
 
         Map<String, AreaConfig> config = buildLaboratoryConfig();
         List<FieldExtractionConfig> fields = buildFieldConfigurations(config);
-        Map<String, String> data = sectionTextExtractor.extractMultipleValues(document, fields, section);
+        Map<String, String> data = plainTextExtractor.extractMultipleValues(document, fields, section);
 
-        String examDate = sectionTextExtractor.extractDate(data.get("fecha"));
+        String examDate = plainTextExtractor.extractDate(data.get("fecha"));
 
         if (examDate == null || examDate.isEmpty()) {
             return false;
@@ -70,14 +70,14 @@ public class LaboratoryResultTextBusiness {
 
         // Mapear los resultados extraídos a los campos de DataExam
 
-        String rawMorphologyStudy = sectionTextExtractor.extractTextBetweenLabels(
+        String rawMorphologyStudy = plainTextExtractor.extractTextBetweenLabels(
                 document, "EXTENDIDO DE SANGRE PERIFERICA, ESTUDIO DE MORFOLOGIA", "TECNICA :", section
         );
         String MorphologyStudyJson = morphologyStudyMapper.parseToJson(rawMorphologyStudy);
         createDataValue("Estudio de Morfologia", MorphologyStudyJson, exam);
 
         createDataValue("ALT",
-                sectionTextExtractor.extractTextBetweenLabels(
+                plainTextExtractor.extractTextBetweenLabels(
                         document,
                         "ALANINO AMINOTRANSFERASAS (ALT,TGP)",
                         "mg/dL",
@@ -85,7 +85,7 @@ public class LaboratoryResultTextBusiness {
                 exam);
 
         createDataValue("AST",
-                sectionTextExtractor.extractTextBetweenLabels(
+                plainTextExtractor.extractTextBetweenLabels(
                         document,
                         "TRANSAMINASA GLUTAMICO OXALACETICA",
                         "U/L",
@@ -93,7 +93,7 @@ public class LaboratoryResultTextBusiness {
                 exam);
 
         createDataValue("HDL",
-                sectionTextExtractor.extractTextBetweenLabels(
+                plainTextExtractor.extractTextBetweenLabels(
                         document,
                         "COLESTEROL DE ALTA DENSIDAD [HDL]",
                         "mg/dL",
@@ -101,7 +101,7 @@ public class LaboratoryResultTextBusiness {
                 exam);
 
         createDataValue("COLESTEROL TOTAL",
-                sectionTextExtractor.extractTextBetweenLabels(
+                plainTextExtractor.extractTextBetweenLabels(
                         document,
                         "COLESTEROL TOTAL",
                         "mg/dL",
@@ -109,7 +109,7 @@ public class LaboratoryResultTextBusiness {
                 exam);
 
         createDataValue("CREATININA",
-                sectionTextExtractor.extractTextBetweenLabels(
+                plainTextExtractor.extractTextBetweenLabels(
                         document,
                         "CREATININA",
                         "mg/dL",
@@ -117,7 +117,7 @@ public class LaboratoryResultTextBusiness {
                 exam);
 
         createDataValue("GLUCOSA",
-                sectionTextExtractor.extractTextBetweenLabels(
+                plainTextExtractor.extractTextBetweenLabels(
                         document,
                         "GLUCOSA PRE",
                         "mg/dL",
@@ -125,7 +125,7 @@ public class LaboratoryResultTextBusiness {
                 exam);
 
         createDataValue("BUN",
-                sectionTextExtractor.extractTextBetweenLabels(
+                plainTextExtractor.extractTextBetweenLabels(
                         document,
                         "NITROGENO UREICO (BUN)",
                         "mg/dL",
@@ -133,7 +133,7 @@ public class LaboratoryResultTextBusiness {
                 exam);
 
         createDataValue("TRIGLICERIDOS",
-                sectionTextExtractor.extractTextBetweenLabels(
+                plainTextExtractor.extractTextBetweenLabels(
                         document,
                         "TRIGLICERIDOS",
                         "mg/dL",
@@ -141,7 +141,7 @@ public class LaboratoryResultTextBusiness {
                 exam);
 
         createDataValue("RTO.BLANCOS",
-                sectionTextExtractor.extractTextBetweenLabels(
+                plainTextExtractor.extractTextBetweenLabels(
                         document,
                         "RECUENTO DE BLANCOS",
                         "x10³/uL",
@@ -149,7 +149,7 @@ public class LaboratoryResultTextBusiness {
                 exam);
 
         createDataValue("HEMOGLOBINA",
-                sectionTextExtractor.extractTextBetweenLabels(
+                plainTextExtractor.extractTextBetweenLabels(
                         document,
                         "HEMOGLOBINA",
                         "g / dl",
@@ -157,7 +157,7 @@ public class LaboratoryResultTextBusiness {
                 exam);
 
         createDataValue("HEMATOCRITO",
-                sectionTextExtractor.extractTextBetweenLabels(
+                plainTextExtractor.extractTextBetweenLabels(
                         document,
                         "HEMATOCRITO",
                         "%",
@@ -165,7 +165,7 @@ public class LaboratoryResultTextBusiness {
                 exam);
 
         createDataValue("RTO.PLAQUETAS",
-                sectionTextExtractor.extractTextBetweenLabels(
+                plainTextExtractor.extractTextBetweenLabels(
                         document,
                         "RECUENTO DE PLAQUETAS",
                         "x10³/uL",
@@ -173,7 +173,7 @@ public class LaboratoryResultTextBusiness {
                 exam);
 
         createDataValue("RETICULOCITOS",
-                sectionTextExtractor.extractTextBetweenLabels(
+                plainTextExtractor.extractTextBetweenLabels(
                         document,
                         "RETICULOCITOS",
                         "%",
@@ -181,7 +181,7 @@ public class LaboratoryResultTextBusiness {
                 exam);
 
         createDataValue("ACIDO HIPURICO",
-                sectionTextExtractor.extractTextBetweenLabels(
+                plainTextExtractor.extractTextBetweenLabels(
                         document,
                         "ACIDO HIPÚRICO (TOLUENO)",
                         "g/g",
@@ -189,7 +189,7 @@ public class LaboratoryResultTextBusiness {
                 exam);
 
         createDataValue("ACIDO METILHIPURICO",
-                sectionTextExtractor.extractTextBetweenLabels(
+                plainTextExtractor.extractTextBetweenLabels(
                         document,
                         "ACIDO METILHIPÚRICO (XILENO)",
                         "g/g",
@@ -197,7 +197,7 @@ public class LaboratoryResultTextBusiness {
                 exam);
 
         createDataValue("FENOL",
-                sectionTextExtractor.extractTextBetweenLabels(
+                plainTextExtractor.extractTextBetweenLabels(
                         document,
                         "FENOL (BENCENO)",
                         "mg/g",
@@ -205,7 +205,7 @@ public class LaboratoryResultTextBusiness {
                 exam);
 
         createDataValue("O-CRESOL",
-                sectionTextExtractor.extractTextBetweenLabels(
+                plainTextExtractor.extractTextBetweenLabels(
                         document,
                         "O-CRESOL (TOLUENO)",
                         "mg/g",

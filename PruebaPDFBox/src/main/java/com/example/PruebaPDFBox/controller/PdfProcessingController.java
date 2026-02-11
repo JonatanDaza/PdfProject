@@ -19,7 +19,7 @@ import java.util.Map;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 @RestController
-@RequestMapping("/pdf")
+@RequestMapping("/api/HC")
 public class PdfProcessingController {
 
     private static final String PDF_FOLDER = "pdfs";
@@ -40,7 +40,7 @@ public class PdfProcessingController {
         return ResponseEntity.ok(service.process(file));
     }
 
-    @PostMapping(value = "/HC")
+    @PostMapping(value = "/all")
     public Map<String, Object> AllClinicalHistories(@RequestBody PaginationRequest request) {
         try {
             Page<ClinicalHistoryDto> clinicalHistoryDtoPage = clinicalHistoryService.getAllClinicalHistories(
