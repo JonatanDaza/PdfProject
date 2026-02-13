@@ -1,4 +1,4 @@
-package com.example.PruebaPDFBox.business.OccupationalMedicineBusiness;
+package com.example.PruebaPDFBox.business.ExamsTextBusiness;
 
 import com.example.PruebaPDFBox.model.Worker;
 import com.example.PruebaPDFBox.model.Exam;
@@ -12,38 +12,22 @@ import com.example.PruebaPDFBox.repository.DataTypeRepository;
 import com.example.PruebaPDFBox.repository.DataValueRepository;
 import com.example.PruebaPDFBox.repository.ClinicalHistoryRepository;
 import com.example.PruebaPDFBox.repository.ExamRepository;
+import com.example.PruebaPDFBox.service.OccupationalMedicineTextService;
 import com.example.PruebaPDFBox.utilities.extractor.TextExtractor.PlainTextExtractor;
 import com.example.PruebaPDFBox.utilities.mapper.MapperJsons.HealthRequirementMapper;
+import lombok.RequiredArgsConstructor;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
 
 @Component
+@RequiredArgsConstructor
 public class OccupationalMedicineTextBusiness {
 
     private final PlainTextExtractor plainTextExtractor;
-    private final DataTypeRepository dataTypeRepository;
-    private final DataValueRepository dataValueRepository;
-    private final ClinicalHistoryRepository clinicalHistoryRepository;
-    private final ExamRepository examRepository;
     private final HealthRequirementMapper healthRequirementMapper;
-
-    public OccupationalMedicineTextBusiness(
-            PlainTextExtractor plainTextExtractor,
-            DataTypeRepository dataTypeRepository,
-            DataValueRepository dataValueRepository,
-            ClinicalHistoryRepository clinicalHistoryRepository,
-            ExamRepository examRepository,
-            HealthRequirementMapper healthRequirementMapper
-    ) {
-        this.plainTextExtractor = plainTextExtractor;
-        this.dataTypeRepository = dataTypeRepository;
-        this.dataValueRepository = dataValueRepository;
-        this.clinicalHistoryRepository = clinicalHistoryRepository;
-        this.examRepository = examRepository;
-        this.healthRequirementMapper = healthRequirementMapper;
-    }
+    private final OccupationalMedicineTextService occupationalMedicineTextService;
 
     public boolean process(
             PDDocument document,
@@ -52,122 +36,117 @@ public class OccupationalMedicineTextBusiness {
             String examName
     ) throws Exception {
 
+        // 1. Extraer texto del PDF
         Map<String, AreaConfig> config = buildEvaluationConfig();
         List<FieldExtractionConfig> fields = buildFieldConfigurations(config);
         Map<String, String> data = plainTextExtractor.extractMultipleValues(document, fields, section);
 
+        // 2. Validar fecha — lógica de negocio
         String examDate = plainTextExtractor.extractDate(data.get("fecha"));
-
         if (examDate == null || examDate.trim().isEmpty()) {
             return false;
         }
 
-        if (examRepository.findByExamDateAndExamName(examDate, examName).isPresent()) {
+        // 3. Validar duplicado — delega al service
+        if (occupationalMedicineTextService.examAlreadyExists(examDate, examName)) {
             return false;
         }
 
-        ClinicalHistory clinicalHistory = clinicalHistoryRepository
-                .findByWorkerAndExamDate(worker, examDate)
-                .orElseGet(() -> clinicalHistoryRepository.save(new ClinicalHistory()));
+        // 4. Persistir examen — delega al service
+        Exam exam = occupationalMedicineTextService.saveExam(examName, examDate, worker);
 
-        Exam exam = new Exam();
-        exam.setExamName(examName);
-        exam.setExamDate(examDate);
-        exam.setClinicalHistory(clinicalHistory);
-        exam.setWorker(worker);
-        exam = examRepository.save(exam);
-
-        createDataValue("Tiempo de Exposición",
-                plainTextExtractor.extractOnlyNumbers(data.get("tiempoExposicion")),
-                exam);
-
-        createDataValue("Actividades Manuales",
-                data.get("actividadesManuales"),
-                exam);
-
-        createDataValue("Ejercicios o Deportes",
-                data.get("ejerciciosDeportes"),
-                exam);
-
-        createDataValue("Consumidor de Alcohol",
-                data.get("consumidorAlcohol"),
-                exam);
-
-        createDataValue("Fumador Actual",
-                data.get("fumadorActual"),
-                exam);
-
-        createDataValue("Tensión Arterial",
-                data.get("tensionArterial"),
-                exam);
-
-        createDataValue("Frecuencia Cardíaca",
-                plainTextExtractor.extractOnlyNumbers(data.get("frecuenciaCardiaca")),
-                exam);
-
-        createDataValue("Frecuencia Respiratoria",
-                plainTextExtractor.extractOnlyNumbers(data.get("frecuenciaRespiratoria")),
-                exam);
-
-        createDataValue("Lateralidad Dominante",
-                data.get("lateralidadDominante"),
-                exam);
-
-        createDataValue("Perímetro Abdominal",
-                plainTextExtractor.extractOnlyNumbers(data.get("perimetroAbdominal")),
-                exam);
-
-        createDataValue("Peso",
-                plainTextExtractor.extractOnlyNumbers(data.get("peso")),
-                exam);
-
-        createDataValue("Talla",
-                plainTextExtractor.extractOnlyNumbers(data.get("talla")),
-                exam);
-
-        createDataValue("IMC",
-                data.get("imc"),
-                exam);
-
-        createDataValue("Diagnósticos",
-                data.get("diagnosticos"),
-                exam);
-
-        createDataValue("Concepto Ocupacional",
-                data.get("conceptoOcupacional"),
-                exam);
-
-        createDataValue("Código de Examen",
-                data.get("codigo"),
-                exam);
-
-        String rawHealthRequirements = plainTextExtractor.extractTextBetweenLabels(
-                document, "Cumple", "Restricciones Laborales", section
-        );
-        String healthRequirementsJson = healthRequirementMapper.parseToJson(rawHealthRequirements);
-        createDataValue("Requisitos de Salud", healthRequirementsJson, exam);
+        // 5. Preparar y persistir DataValues — business transforma, service persiste
+        Map<String, String> dataValues = buildDataValues(data, document, section);
+        occupationalMedicineTextService.saveAllDataValues(dataValues, exam);
 
         return true;
     }
 
-    private void createDataValue(String typeName, String value, Exam exam) {
-        if (value == null || value.trim().isEmpty()) {
-            return;
-        }
+    private Map<String, String> buildDataValues(
+            Map<String, String> data,
+            PDDocument document,
+            SectionArea section
+    ) throws Exception {
 
-        DataType dataType = dataTypeRepository.findByName(typeName)
-                .orElseGet(() -> {
-                    DataType newType = new DataType();
-                    newType.setName(typeName);
-                    return dataTypeRepository.save(newType);
-                });
+        Map<String, String> values = new LinkedHashMap<>();
 
-        DataValue dataValue = new DataValue();
-        dataValue.setValue(value);
-        dataValue.setDataType(dataType);
-        dataValue.setExam(exam);
+        values.put("Tiempo de Exposición",
+                plainTextExtractor.extractOnlyNumbers(
+                data.get("tiempoExposicion"))
+        );
 
-        dataValueRepository.save(dataValue);
+        values.put("Actividades Manuales",
+                data.get("actividadesManuales")
+        );
+
+        values.put("Ejercicios o Deportes",
+                data.get("ejerciciosDeportes")
+        );
+
+        values.put("Consumidor de Alcohol",
+                data.get("consumidorAlcohol")
+        );
+
+        values.put("Fumador Actual",
+                data.get("fumadorActual")
+        );
+
+        values.put("Tensión Arterial",
+                data.get("tensionArterial")
+        );
+
+        values.put("Frecuencia Cardíaca",
+                plainTextExtractor.extractOnlyNumbers(
+                data.get("frecuenciaCardiaca"))
+        );
+
+        values.put("Frecuencia Respiratoria",
+                plainTextExtractor.extractOnlyNumbers(
+                data.get("frecuenciaRespiratoria"))
+        );
+
+        values.put("Lateralidad Dominante",
+                data.get("lateralidadDominante")
+        );
+
+        values.put("Perímetro Abdominal",
+                plainTextExtractor.extractOnlyNumbers(
+                data.get("perimetroAbdominal"))
+        );
+
+        values.put("Peso",
+                plainTextExtractor.extractOnlyNumbers(
+                data.get("peso"))
+        );
+
+        values.put("Talla",
+                plainTextExtractor.extractOnlyNumbers(
+                data.get("talla"))
+        );
+
+        values.put("IMC",
+                data.get("imc")
+        );
+
+        values.put("Diagnósticos",
+                data.get("diagnosticos")
+        );
+
+        values.put("Concepto Ocupacional",
+                data.get("conceptoOcupacional")
+        );
+
+        values.put("Código de Examen",
+                data.get("codigo")
+        );
+
+        // Procesamiento especial — lógica de negocio, se queda en Business
+        String rawHealthRequirements = plainTextExtractor.extractTextBetweenLabels(
+                document, "Cumple", "Restricciones Laborales", section
+        );
+        values.put("Requisitos de Salud", healthRequirementMapper.parseToJson(rawHealthRequirements));
+
+        return values;
     }
 
     private List<FieldExtractionConfig> buildFieldConfigurations(Map<String, AreaConfig> config) {

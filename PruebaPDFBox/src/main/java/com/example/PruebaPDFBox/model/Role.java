@@ -1,18 +1,21 @@
 package com.example.PruebaPDFBox.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Entity
-@Table(name = "user_type")
+@Table(name = "role")
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserType {
+public class Role {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,4 +23,8 @@ public class UserType {
 
     @Column(nullable = false)
     private String name;
+
+    @JsonIgnore
+    @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<Users> usersList;
 }

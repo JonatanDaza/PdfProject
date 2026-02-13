@@ -1,4 +1,4 @@
-package com.example.PruebaPDFBox.config;
+package com.example.PruebaPDFBox.config.Security;
 
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
@@ -32,6 +32,7 @@ public class JwtFilter extends OncePerRequestFilter {
         // Ignore routs login y register
         if (path.startsWith("/api/auth/")) {
             filterChain.doFilter(request, response);
+            return;
         }
 
         String authHeader = request.getHeader("Authorization");

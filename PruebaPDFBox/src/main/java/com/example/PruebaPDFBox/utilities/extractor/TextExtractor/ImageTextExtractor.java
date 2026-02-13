@@ -17,10 +17,10 @@ import java.util.*;
 public class ImageTextExtractor {
 
     private static final int MIN_IMAGE_WIDTH = 1500;
-    public static final int MIN_VALID_IMAGE_WIDTH = 500;
-    public static final int MIN_VALID_IMAGE_HEIGHT = 200;
+    public static final int MIN_VALID_IMAGE_WIDTH = 700;
+    public static final int MIN_VALID_IMAGE_HEIGHT = 300;
 
-    private static final int[] PSM_MODES = {6, 11, 4, 3};
+    private static final int[] PSM_MODES = {6};
 
     private final ThreadLocal<Tesseract> tesseractThreadLocal;
     private final PdfImgSectionExtractor pdfImgSectionExtractor;

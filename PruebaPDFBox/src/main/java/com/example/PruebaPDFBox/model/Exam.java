@@ -40,7 +40,7 @@ public class Exam {
     @JsonBackReference
     private Worker worker;
 
-    @OneToMany(mappedBy = "exam", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "exam", cascade = CascadeType.ALL)
     @JsonManagedReference
     private Set<DataValue> dataValues;
 }

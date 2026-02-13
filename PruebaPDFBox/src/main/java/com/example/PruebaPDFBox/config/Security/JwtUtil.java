@@ -1,7 +1,7 @@
-package com.example.PruebaPDFBox.config;
+package com.example.PruebaPDFBox.config.Security;
 
-import com.example.PruebaPDFBox.model.User;
-import com.example.PruebaPDFBox.model.UserType;
+import com.example.PruebaPDFBox.model.Role;
+import com.example.PruebaPDFBox.model.Users;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,6 +10,8 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtUtil {
@@ -42,12 +44,15 @@ public class JwtUtil {
                 .getSubject();
     }
 
-    public String generateToken(User user) {
+    public String generateToken(Users users) {
+        List<String> roleNames = users.getRoles().stream()
+                .map(Role::getName)
+                .collect(Collectors.toList());
         return Jwts.builder()
-                .subject(user.getEmail())
-                .claim("usertype", user.getUserTypes().stream().map(UserType::getName).toList())
-                .claim("username", user.getName())
-                .claim("id", user.getId())
+                .subject(users.getEmail())
+                .claim("roles", roleNames)
+                .claim("name", users.getName())
+                .claim("id", users.getId())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + tokenExpiration))
                 .signWith(getSigningKey())

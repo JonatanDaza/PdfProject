@@ -7,12 +7,8 @@ import lombok.*;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserDto {
+public class RoleDto {
 
     private Long id;
     private String name;
-    private String email;
-    private String password;
-    private boolean active;
-    private UserTypeDto userType;
 }

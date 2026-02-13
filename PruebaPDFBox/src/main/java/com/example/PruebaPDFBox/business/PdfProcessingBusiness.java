@@ -1,10 +1,10 @@
 package com.example.PruebaPDFBox.business;
 
-import com.example.PruebaPDFBox.business.AudiometryBusiness.AudiometryTextBusiness;
-import com.example.PruebaPDFBox.business.LaboratoryBusiness.LaboratoryResultImgBusiness;
-import com.example.PruebaPDFBox.business.LaboratoryBusiness.LaboratoryResultTextBusiness;
-import com.example.PruebaPDFBox.business.OccupationalMedicineBusiness.OccupationalMedicineTextBusiness;
-import com.example.PruebaPDFBox.business.OptometryBusiness.OptometryTextBusiness;
+import com.example.PruebaPDFBox.business.ExamsTextBusiness.AudiometryTextBusiness;
+import com.example.PruebaPDFBox.business.ExamsImgBusiness.LaboratoryResultImgBusiness;
+import com.example.PruebaPDFBox.business.ExamsTextBusiness.LaboratoryResultTextBusiness;
+import com.example.PruebaPDFBox.business.ExamsTextBusiness.OccupationalMedicineTextBusiness;
+import com.example.PruebaPDFBox.business.ExamsTextBusiness.OptometryTextBusiness;
 import com.example.PruebaPDFBox.model.Worker;
 import com.example.PruebaPDFBox.record.AreaConfig;
 import com.example.PruebaPDFBox.record.FieldExtractionConfig;
@@ -12,12 +12,14 @@ import com.example.PruebaPDFBox.record.SectionArea;
 import com.example.PruebaPDFBox.repository.WorkerRepository;
 import com.example.PruebaPDFBox.utilities.extractor.SectionExtractor.PdfSectionExtractor;
 import com.example.PruebaPDFBox.utilities.extractor.TextExtractor.PlainTextExtractor;
+import lombok.RequiredArgsConstructor;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.*;
 
 @Component
+@RequiredArgsConstructor
 public class PdfProcessingBusiness {
 
     private final PdfSectionExtractor pdfSectionExtractor;
@@ -29,18 +31,6 @@ public class PdfProcessingBusiness {
     private final LaboratoryResultImgBusiness laboratoryResultImgBusiness;
     private final SpirometryBusiness spirometryBusiness;
     private final LaboratoryResultTextBusiness laboratoryResultTextBusiness;
-
-    public PdfProcessingBusiness(PdfSectionExtractor pdfSectionExtractor, OccupationalMedicineTextBusiness occupationalMedicineTextBusiness, WorkerRepository workerRepository, PlainTextExtractor plainTextExtractor, AudiometryTextBusiness audiometryTextBusiness, OptometryTextBusiness optometryTextBusiness, LaboratoryResultImgBusiness laboratoryResultImgBusiness, SpirometryBusiness spirometryBusiness, LaboratoryResultTextBusiness laboratoryResultTextBusiness) {
-        this.pdfSectionExtractor = pdfSectionExtractor;
-        this.occupationalMedicineTextBusiness = occupationalMedicineTextBusiness;
-        this.workerRepository = workerRepository;
-        this.plainTextExtractor = plainTextExtractor;
-        this.audiometryTextBusiness = audiometryTextBusiness;
-        this.optometryTextBusiness = optometryTextBusiness;
-        this.laboratoryResultImgBusiness = laboratoryResultImgBusiness;
-        this.spirometryBusiness = spirometryBusiness;
-        this.laboratoryResultTextBusiness = laboratoryResultTextBusiness;
-    }
 
     public Map<String, Object> processPdf(MultipartFile file) {
 

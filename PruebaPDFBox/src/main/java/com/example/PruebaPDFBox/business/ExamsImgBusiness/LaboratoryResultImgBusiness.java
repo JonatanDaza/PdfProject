@@ -1,4 +1,4 @@
-package com.example.PruebaPDFBox.business.LaboratoryBusiness;
+package com.example.PruebaPDFBox.business.ExamsImgBusiness;
 
 import com.example.PruebaPDFBox.model.ClinicalHistory;
 import com.example.PruebaPDFBox.model.DataType;
@@ -95,17 +95,17 @@ public class LaboratoryResultImgBusiness {
         );
 
         createDataValue("COLESTEROL TOTAL",
-                results.get("COLESTEROL TOTAL"),
+                results.get("REFERENCIA COLESTEROL"),
                 exam
         );
 
         createDataValue("COLESTEROL HDL",
-                results.get("COLESTEROL HDL"),
+                results.get("TOTAL COLESTEROL"),
                 exam
         );
 
         createDataValue("COLESTEROL LDL",
-                results.get("COLESTEROL LDL"),
+                results.get("HDL COLESTEROL"),
                 exam
         );
 
@@ -161,9 +161,9 @@ public class LaboratoryResultImgBusiness {
 
                 // Química Sanguínea
                 "GLICEMIA",
-                "COLESTEROL TOTAL",
-                "COLESTEROL HDL",
-                "COLESTEROL LDL",
+                "REFERENCIA COLESTEROL",
+                "TOTAL COLESTEROL",
+                "HDL COLESTEROL",
                 "TRIGLICERIDOS"
         );
     }

@@ -1,4 +1,4 @@
-package com.example.PruebaPDFBox.business.LaboratoryBusiness;
+package com.example.PruebaPDFBox.business.ExamsTextBusiness;
 
 import com.example.PruebaPDFBox.model.*;
 import com.example.PruebaPDFBox.record.AreaConfig;

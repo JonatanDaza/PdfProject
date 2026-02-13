@@ -1,9 +1,9 @@
-package com.example.PruebaPDFBox.config;
+package com.example.PruebaPDFBox.config.Security;
 
-import com.example.PruebaPDFBox.model.User;
-import com.example.PruebaPDFBox.repository.UserRepository;
+import com.example.PruebaPDFBox.model.Users;
+import com.example.PruebaPDFBox.repository.UsersRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -13,20 +13,20 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 public class CustomUserDetailsService implements UserDetailsService {
 
     @Autowired
-    private UserRepository userRepository;
+    private UsersRepository usersRepository;
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        User user = userRepository.findByEmail(email)
+        Users users = usersRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + email));
-        return org.springframework.security.core.userdetails.User
-                .withUsername(user.getEmail())
-                .password(user.getPassword())
-                .authorities(user.getUserTypes().stream().map(userType -> new SimpleGrantedAuthority(userType.getName())).toList())
+        return User
+                .withUsername(users.getEmail())
+                .password(users.getPassword())
+                .authorities(users.getRoles().getClass().getName())
                 .accountExpired(false)
                 .accountLocked(false)
                 .credentialsExpired(false)
-                .disabled(!user.isActive())
+                .disabled(!users.isActive())
                 .build();
     }
 }
