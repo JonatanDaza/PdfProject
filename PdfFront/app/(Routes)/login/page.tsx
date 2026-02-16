@@ -35,9 +35,9 @@ const LoginPage = () => {
         
         // Redirigir según rol
         router.push(
-          response.data.roles.includes('ADMIN') 
-            ? '/admin/dashboard' 
-            : '/'
+          response.data.roles.includes('ADMIN', 'USER') 
+            ? '/dashboard'
+            : '/dashboard'
         );
       }
     } catch (err: any) {
