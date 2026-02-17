@@ -29,8 +29,8 @@ public class AuthController {
         try {
             AuthResponseDto response = authBusiness.register(request);
             return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(ResponseHttpApi.responseHttpAction(
-                            response.getId(),
+                    .body(ResponseHttpApi.responseHttpFindId(
+                            response,
                             ResponseHttpApi.CODE_OK,
                             "Usuario registrado exitosamente"
                     ));

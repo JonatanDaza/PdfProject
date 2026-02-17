@@ -25,12 +25,12 @@ const MENU_CONFIG: Record<string, MenuItem[]> = {
     admin: [
         { href: "/dashboard", label: "Dashboard", icon: <MdDashboard size={24} /> },
         { href: "/dashboard/uploadHC", label: "Subir HC", icon: <MdCloudUpload size={24} /> },
-        { href: "/dashboard/historias", label: "Historias", icon: <MdHistory size={24} /> },
+        { href: "/dashboard/readHC", label: "Historias", icon: <MdHistory size={24} /> },
     ],
     user: [
         { href: "/dashboard", label: "Dashboard", icon: <MdDashboard size={24} /> },
         { href: "/dashboard/uploadHC", label: "Subir HC", icon: <MdCloudUpload size={24} /> },
-        { href: "/dashboard/historias", label: "Historias", icon: <MdHistory size={24} /> },
+        { href: "/dashboard/readHC", label: "Historias", icon: <MdHistory size={24} /> },
     ],
 };
 
@@ -129,8 +129,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onCollapsedChange }) => {
                 <button
                     onClick={handleLogout}
                     className={`
-                        w-full flex items-center gap-3 bg-red-500 text-white px-4 py-3 rounded-lg 
-                        hover:bg-red-600 active:bg-red-700 transition-all
+                        w-full flex items-center gap-3 bg-blue-600 text-white px-4 py-3 rounded-lg 
+                        hover:bg-blue-700 active:bg-blue-800 transition-all
                         ${isCollapsed ? 'justify-center' : ''}
                     `}
                     title={isCollapsed ? "Cerrar sesión" : ''}

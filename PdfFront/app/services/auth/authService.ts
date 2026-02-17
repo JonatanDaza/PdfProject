@@ -15,15 +15,12 @@ const login = async (email: string, password: string) => {
     throw new Error(data.message || 'Error en la autenticación');
   }
 
-  console.log("[authService] Respuesta del servidor:", data);
-
   // Guardar token y datos de usuario
   // La respuesta tiene estructura: {date, code, data: {...}, message}
   const userDataFromResponse = data.data || data;
   const tokenFromResponse = userDataFromResponse.token || data.token;
   
   if (tokenFromResponse) {
-    console.log("[authService] Token a guardar:", tokenFromResponse);
     localStorage.setItem('token', tokenFromResponse);
     
     // Asegurar que userData tiene la estructura correcta
@@ -35,8 +32,6 @@ const login = async (email: string, password: string) => {
       token: tokenFromResponse,
       ...userDataFromResponse
     };
-    
-    console.log("[authService] Guardando userData:", userData);
     localStorage.setItem('userData', JSON.stringify(userData));
     
     // También guardar token en cookie
@@ -46,8 +41,25 @@ const login = async (email: string, password: string) => {
   return data;
 };
 
+const register = async (name: string, email: string, password: string) => {
+  const response = await fetch(`${API.API_BASE_URL}/auth/register`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ name, email, password })
+  });
+  
+  const data = await response.json();
+  
+  if (!response.ok) {
+    throw new Error(data.message || 'Error al registrarse');
+  }
+
+  return data;
+};
+
 const logout = () => {
-  console.log("[authService] Cerrando sesión");
   localStorage.removeItem('token');
   localStorage.removeItem('userData');
   document.cookie = 'token=; path=/; max-age=0';
@@ -64,6 +76,7 @@ const getRedirectUrl = () => {
 
 export const authService = {
   login,
+  register,
   logout,
   getRedirectUrl
 };

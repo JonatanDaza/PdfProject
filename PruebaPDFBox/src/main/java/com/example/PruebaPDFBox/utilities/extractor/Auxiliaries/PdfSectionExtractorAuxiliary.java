@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 public class PdfSectionExtractorAuxiliary {
 
     public static final Map<String, Set<String>> SECTION_TITLES = Map.of(
-            "OPTOMETRY_LABEL", Set.of("EXAMEN DE OPTOMETRIA", "EXAMEN DE CONSULTA DE OPTOMETRIA"),
+            "OPTOMETRY_LABEL", Set.of("EXAMEN DE OPTOMETRIA", "EXAMEN DE CONSULTA DE OPTOMETRIA", "EXAMEN DE VISIOMETRIA"),
             "OCCUPATIONAL_MEDICINE_LABEL", Set.of("EVALUACIÓN MEDICA OCUPACIONAL"),
             "AUDIOMETRY_LABEL", Set.of("AUDIOMETRÍA"),
             "LABORATORY_LABEL", Set.of("Entidad:", "Laboratorio N°: 69.011"),
