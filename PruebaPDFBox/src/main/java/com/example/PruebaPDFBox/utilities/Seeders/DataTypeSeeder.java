@@ -36,7 +36,7 @@ public class DataTypeSeeder {
                 "Ejercicios o Deportes", "Consumidor de Alcohol",
                 "Fumador Actual", "Tensión Arterial", "Frecuencia Cardíaca",
                 "Frecuencia Respiratoria", "Lateralidad Dominante", "Perímetro Abdominal",
-                "Peso", "Talla", "IMC", "Diagnósticos", "Concepto Ocupacional",
+                "Peso", "Talla", "IMC", "Concepto Ocupacional", "Diagnósticos",
                 "Código de Examen", "Requisitos de Salud", "Oído derecho",
                 "Oído izquierdo", "Nombre del Diagnóstico", "Ponderado Decibelios",
                 "Recomendaciones", "Observaciones", "DIAGNÓSTICO",

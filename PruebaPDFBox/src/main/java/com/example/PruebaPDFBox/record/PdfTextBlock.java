@@ -6,5 +6,3 @@ public record PdfTextBlock(
         float x,
         float y
 ) {}
-
-
