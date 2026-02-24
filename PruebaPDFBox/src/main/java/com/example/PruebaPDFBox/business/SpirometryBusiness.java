@@ -4,121 +4,118 @@ import com.example.PruebaPDFBox.model.*;
 import com.example.PruebaPDFBox.record.AreaConfig;
 import com.example.PruebaPDFBox.record.FieldExtractionConfig;
 import com.example.PruebaPDFBox.record.SectionArea;
-import com.example.PruebaPDFBox.repository.ClinicalHistoryRepository;
-import com.example.PruebaPDFBox.repository.DataTypeRepository;
-import com.example.PruebaPDFBox.repository.DataValueRepository;
-import com.example.PruebaPDFBox.repository.ExamRepository;
+import com.example.PruebaPDFBox.record.SubSectionArea;
+import com.example.PruebaPDFBox.service.ServiceEntity.ClinicalHistoryService;
+import com.example.PruebaPDFBox.service.ServiceEntity.DataTypeService;
+import com.example.PruebaPDFBox.service.ServiceEntity.DataValueService;
+import com.example.PruebaPDFBox.service.ServiceEntity.ExamService;
+import com.example.PruebaPDFBox.utilities.extractor.SectionExtractor.PdfSubSectionExtractor;
 import com.example.PruebaPDFBox.utilities.extractor.TextExtractor.PlainTextExtractor;
+import lombok.RequiredArgsConstructor;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.IOException;
+import java.util.*;
 
 @Component
+@RequiredArgsConstructor
 public class SpirometryBusiness {
 
     private final PlainTextExtractor plainTextExtractor;
-    private final ExamRepository examRepository;
-    private final ClinicalHistoryRepository clinicalHistoryRepository;
-    private final DataTypeRepository dataTypeRepository;
-    private final DataValueRepository dataValueRepository;
+    private final ExamService examService;
+    private final ClinicalHistoryService clinicalHistoryService;
+    private final DataValueService dataValueService;
+    private final PdfSubSectionExtractor pdfSubSectionExtractor;
 
-    public SpirometryBusiness(
-            PlainTextExtractor plainTextExtractor,
-            ExamRepository examRepository,
-            ClinicalHistoryRepository clinicalHistoryRepository,
-            DataTypeRepository dataTypeRepository, DataValueRepository dataValueRepository) {
-        this.plainTextExtractor = plainTextExtractor;
-        this.examRepository = examRepository;
-        this.clinicalHistoryRepository = clinicalHistoryRepository;
-        this.dataTypeRepository = dataTypeRepository;
-        this.dataValueRepository = dataValueRepository;
+    public boolean process(PDDocument document, SectionArea section, Worker worker) {
+        try {
+            // Extraer subsecciones primero
+            Map<String, SubSectionArea> subSections = pdfSubSectionExtractor.extract(
+                    document, section, SUB_SECTION_TITLES
+            );
+
+            // Extraer fecha desde DATOS PERSONALES
+            SubSectionArea datosPersonalesArea = subSections.get("DATOS PERSONALES");
+            String examDate = null;
+
+            if (datosPersonalesArea != null) {
+                Map<String, AreaConfig> config = buildSpirometryConfig();
+                List<FieldExtractionConfig> dateFields = new ArrayList<>();
+                dateFields.add(new FieldExtractionConfig(
+                        "Fecha:", "Fecha:",
+                        config.get("Fecha:"),
+                        FieldExtractionConfig.ExtractionStrategy.EXACT_MATCH
+                ));
+
+                Map<String, String> dateData = plainTextExtractor.extractMultipleValues(
+                        document, dateFields, section, datosPersonalesArea
+                );
+
+                String rawDate = dateData.get("Fecha:");
+                examDate = plainTextExtractor.extractDate(rawDate);
+            }
+
+            if (examDate == null || examDate.isEmpty()) {
+                System.err.println("No se encontró fecha de examen en DATOS PERSONALES");
+                return false;
+            }
+
+            String examName = "INFORME DE ESPIROMETRÍA";
+            if (examService.examAlreadyExists(examDate, examName)) {
+                System.out.println("Examen ya existe: " + examName + " - " + examDate);
+                return false;
+            }
+
+            Map<String, String> values = buildDataValues(document, section, subSections);
+
+            ClinicalHistory clinicalHistory = clinicalHistoryService.findOrCreate(worker, examDate);
+            Exam exam = examService.save(examName, examDate, worker, clinicalHistory);
+            dataValueService.saveAll(values, exam);
+
+            return true;
+        } catch (IOException e) {
+            System.err.println("Error procesando medicina ocupacional: " + e.getMessage());
+            return false;
+        }
     }
 
-    public boolean process(
+    private Map<String, String> buildDataValues(
             PDDocument document,
             SectionArea section,
-            Worker worker,
-            String examName
-    ) throws Exception {
+            Map<String, SubSectionArea> subSections
+    ) throws IOException {
 
+        Map<String, String> values = new LinkedHashMap<>();
         Map<String, AreaConfig> config = buildSpirometryConfig();
 
-        List<FieldExtractionConfig> fields = buildFieldConfigurations(config);
-        Map<String, String> data = plainTextExtractor.extractMultipleValues(document, fields, section);
+        SubSectionArea spirometryArea = subSections.get("INFORME DE ESPIROMETRÍA");
+        if (spirometryArea != null) {
+            List<FieldExtractionConfig> fields = buildSpirometryField(config);
+            Map<String, String> extracted = plainTextExtractor.extractMultipleValues(
+                    document, fields, section, spirometryArea
+            );
 
-        String examDate = plainTextExtractor.extractDate(data.get("fecha"));
-
-        if (examDate == null || examDate.trim().isEmpty()) {
-            return false;
+            values.putAll(extracted);
         }
 
-        if (examRepository.findByExamDateAndExamName(examDate, examName).isPresent()) {
-            return false;
-        }
-
-        ClinicalHistory clinicalHistory = clinicalHistoryRepository
-                .findByWorkerAndExamDate(worker, examDate)
-                .orElseGet(() -> clinicalHistoryRepository.save(new ClinicalHistory()));
-
-        Exam exam = new Exam();
-        exam.setExamName(examName);
-        exam.setExamDate(examDate);
-        exam.setClinicalHistory(clinicalHistory);
-        exam.setWorker(worker);
-        exam = examRepository.save(exam);
-
-        createDataValue("Interpretación",
-                data.get("Interpretación"),
-                exam);
-
-        examRepository.save(exam);
-        return true;
+        return values;
     }
 
-    private List<FieldExtractionConfig> buildFieldConfigurations(Map<String, AreaConfig> config) {
+    private List<FieldExtractionConfig> buildSpirometryField(Map<String, AreaConfig> config) {
         List<FieldExtractionConfig> fields = new ArrayList<>();
 
-        fields.add(new FieldExtractionConfig("Fecha:", "fecha",
-                config.get("Fecha:"), FieldExtractionConfig.ExtractionStrategy.HORIZONTAL));
-
-
         fields.add(new FieldExtractionConfig("Interpretación", "Interpretacion",
-                config.get("Interpretación"), FieldExtractionConfig.ExtractionStrategy.VERTICAL));
-
+                config.get("Interpretación"), FieldExtractionConfig.ExtractionStrategy.HORIZONTAL));
         return fields;
-    }
-
-    private void createDataValue(String typeName, String value, Exam exam) {
-        if (value == null || value.trim().isEmpty()) {
-            return;
-        }
-
-        DataType dataType = dataTypeRepository.findByName(typeName)
-                .orElseGet(() -> {
-                    DataType newType = new DataType();
-                    newType.setName(typeName);
-                    return dataTypeRepository.save(newType);
-                });
-
-        DataValue dataValue = new DataValue();
-        dataValue.setValue(value);
-        dataValue.setDataType(dataType);
-        dataValue.setExam(exam);
-
-        dataValueRepository.save(dataValue);
     }
 
     private Map<String, AreaConfig> buildSpirometryConfig() {
         Map<String, AreaConfig> config = new HashMap<>();
-
-        config.put("Fecha:", new AreaConfig(0, 100, 10));
-
         config.put("Interpretación", new AreaConfig(0, 50, 50));
 
         return config;
     }
+
+    private static final Set<String> SUB_SECTION_TITLES = Set.of();
 }

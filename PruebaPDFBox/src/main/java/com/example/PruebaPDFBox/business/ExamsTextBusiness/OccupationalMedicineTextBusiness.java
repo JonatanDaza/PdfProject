@@ -11,13 +11,16 @@ import java.util.Set;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.stereotype.Component;
 
+import com.example.PruebaPDFBox.model.ClinicalHistory;
 import com.example.PruebaPDFBox.model.Exam;
 import com.example.PruebaPDFBox.model.Worker;
 import com.example.PruebaPDFBox.record.AreaConfig;
 import com.example.PruebaPDFBox.record.FieldExtractionConfig;
 import com.example.PruebaPDFBox.record.SectionArea;
 import com.example.PruebaPDFBox.record.SubSectionArea;
-import com.example.PruebaPDFBox.service.OccupationalMedicineTextService;
+import com.example.PruebaPDFBox.service.ServiceEntity.ClinicalHistoryService;
+import com.example.PruebaPDFBox.service.ServiceEntity.DataValueService;
+import com.example.PruebaPDFBox.service.ServiceEntity.ExamService;
 import com.example.PruebaPDFBox.utilities.extractor.SectionExtractor.PdfSubSectionExtractor;
 import com.example.PruebaPDFBox.utilities.extractor.TextExtractor.PlainTextExtractor;
 import com.example.PruebaPDFBox.utilities.mapper.MapperJsons.HealthRequirementMapper;
@@ -30,10 +33,12 @@ public class OccupationalMedicineTextBusiness {
 
     private final PlainTextExtractor plainTextExtractor;
     private final HealthRequirementMapper healthRequirementMapper;
-    private final OccupationalMedicineTextService occupationalMedicineTextService;
+    private final ExamService examService;
+    private final ClinicalHistoryService clinicalHistoryService;
+    private final DataValueService dataValueService;
     private final PdfSubSectionExtractor pdfSubSectionExtractor;
 
-    public boolean process(PDDocument document, SectionArea section, Worker worker, String sectionKey) {
+    public boolean process(PDDocument document, SectionArea section, Worker worker) {
         try {
             // Extraer subsecciones primero
             Map<String, SubSectionArea> subSections = pdfSubSectionExtractor.extract(
@@ -67,15 +72,16 @@ public class OccupationalMedicineTextBusiness {
             }
 
             String examName = "EVALUACIÓN MEDICA OCUPACIONAL";
-            if (occupationalMedicineTextService.examAlreadyExists(examDate, examName)) {
+            if (examService.examAlreadyExists(examDate, examName)) {
                 System.out.println("Examen ya existe: " + examName + " - " + examDate);
                 return false;
             }
 
             Map<String, String> values = buildDataValues(document, section, subSections);
 
-            Exam exam = occupationalMedicineTextService.saveExam(examName, examDate, worker);
-            occupationalMedicineTextService.saveAllDataValues(values, exam);
+            ClinicalHistory clinicalHistory = clinicalHistoryService.findOrCreate(worker, examDate);
+            Exam exam = examService.save(examName, examDate, worker, clinicalHistory);
+            dataValueService.saveAll(values, exam);
 
             return true;
         } catch (IOException e) {

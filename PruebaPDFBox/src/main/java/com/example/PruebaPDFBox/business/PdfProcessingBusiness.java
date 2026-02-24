@@ -10,6 +10,7 @@ import com.example.PruebaPDFBox.business.ExamsTextBusiness.WorkerExamBusiness;
 import com.example.PruebaPDFBox.model.Worker;
 import com.example.PruebaPDFBox.record.SectionArea;
 import com.example.PruebaPDFBox.repository.WorkerRepository;
+import com.example.PruebaPDFBox.service.ServiceEntity.WorkerService;
 import com.example.PruebaPDFBox.utilities.extractor.SectionExtractor.PdfSectionExtractor;
 
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,7 @@ public class PdfProcessingBusiness {
     private final WorkerRepository workerRepository;
     private final WorkerExamBusiness workerExamBusiness;
     private final OccupationalMedicineTextBusiness occupationalMedicineTextBusiness;
+    private final WorkerService workerService;
     // private final AudiometryTextBusiness audiometryTextBusiness;
     // private final OptometryTextBusiness optometryTextBusiness;
     // private final LaboratoryResultImgBusiness laboratoryResultImgBusiness;
@@ -39,14 +41,6 @@ public class PdfProcessingBusiness {
         try (PDDocument document = PDDocument.load(file.getInputStream())) {
 
             Map<String, SectionArea> sections = pdfSectionExtractor.extract(document);
-
-            // Worker worker = workerExamBusiness.processWorker(document, sections, null);
-            // if (worker == null) {
-            //     throw new RuntimeException("No se pudo extraer datos válidos del trabajador");
-            // }
-
-            // Worker finalWorker = worker;
-            // worker = workerRepository.findByCC(worker.getCC()).orElseGet(() -> workerRepository.save(finalWorker));
 
             int examsProcessed = 0;
 
@@ -61,12 +55,10 @@ public class PdfProcessingBusiness {
                     throw new RuntimeException("No se pudo extraer datos válidos del trabajador");
                 }
 
-                Worker finalWorker = worker;
-                worker = workerRepository.findByCC(worker.getCC())
-                        .orElseGet(() -> workerRepository.save(finalWorker));
+                worker = workerService.findOrCreate(worker);
 
                 if ("OCCUPATIONAL_MEDICINE_LABEL".equals(sectionKey)) {
-                    if (occupationalMedicineTextBusiness.process(document, sectionArea, worker, sectionKey)) {
+                    if (occupationalMedicineTextBusiness.process(document, sectionArea, worker)) {
                         examsProcessed++;
                     }
                 }
