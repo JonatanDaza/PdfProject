@@ -24,9 +24,13 @@ public class PdfSectionExtractor {
 
         List<PdfTextBlock> titles = blocks.stream()
                 .filter(b -> PdfSectionExtractorAuxiliary.ALL_TITLES.contains(b.text().toUpperCase().trim()))
-                .sorted(Comparator
-                        .comparingInt(PdfTextBlock::page)
-                        .thenComparing(PdfTextBlock::y).reversed()
+//                .sorted(Comparator
+//                        .comparingInt(PdfTextBlock::page)
+//                        .thenComparing(PdfTextBlock::y).reversed()//.reversed() // SIN .reversed() — orden ascendente (de arriba a abajo)
+                .sorted(
+                        Comparator
+                                .comparingInt(PdfTextBlock::page)
+                                .thenComparing(Comparator.comparing(PdfTextBlock::y).reversed())
                 )
                 .toList();
 
@@ -58,7 +62,7 @@ public class PdfSectionExtractor {
                 endY = Float.MAX_VALUE;
             }
 
-            SectionArea area = new SectionArea(current.page(), current.y(), endPage, endY);
+            SectionArea area = new SectionArea(current.page(), current.y(), endPage, endY, current.text().trim());
             sections.put(sectionKey, area);
         }
         return sections;

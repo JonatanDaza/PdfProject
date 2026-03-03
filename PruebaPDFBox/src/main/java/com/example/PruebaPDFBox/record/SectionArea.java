@@ -4,5 +4,6 @@ public record SectionArea(
         int startPage,
         float startY,
         int endPage,
-        float endY
+        float endY,
+        String examName
 ) {}

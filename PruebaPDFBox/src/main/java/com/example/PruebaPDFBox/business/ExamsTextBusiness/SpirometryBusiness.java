@@ -1,4 +1,10 @@
-package com.example.PruebaPDFBox.business;
+package com.example.PruebaPDFBox.business.ExamsTextBusiness;
+
+import java.io.IOException;
+import java.util.*;
+
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.springframework.stereotype.Component;
 
 import com.example.PruebaPDFBox.model.*;
 import com.example.PruebaPDFBox.record.AreaConfig;
@@ -6,17 +12,12 @@ import com.example.PruebaPDFBox.record.FieldExtractionConfig;
 import com.example.PruebaPDFBox.record.SectionArea;
 import com.example.PruebaPDFBox.record.SubSectionArea;
 import com.example.PruebaPDFBox.service.ServiceEntity.ClinicalHistoryService;
-import com.example.PruebaPDFBox.service.ServiceEntity.DataTypeService;
 import com.example.PruebaPDFBox.service.ServiceEntity.DataValueService;
 import com.example.PruebaPDFBox.service.ServiceEntity.ExamService;
 import com.example.PruebaPDFBox.utilities.extractor.SectionExtractor.PdfSubSectionExtractor;
 import com.example.PruebaPDFBox.utilities.extractor.TextExtractor.PlainTextExtractor;
-import lombok.RequiredArgsConstructor;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.springframework.stereotype.Component;
 
-import java.io.IOException;
-import java.util.*;
+import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
@@ -28,7 +29,7 @@ public class SpirometryBusiness {
     private final DataValueService dataValueService;
     private final PdfSubSectionExtractor pdfSubSectionExtractor;
 
-    public boolean process(PDDocument document, SectionArea section, Worker worker) {
+    public boolean process(PDDocument document, SectionArea section, Worker worker, String examName) {
         try {
             // Extraer subsecciones primero
             Map<String, SubSectionArea> subSections = pdfSubSectionExtractor.extract(
@@ -36,10 +37,10 @@ public class SpirometryBusiness {
             );
 
             // Extraer fecha desde DATOS PERSONALES
-            SubSectionArea datosPersonalesArea = subSections.get("DATOS PERSONALES");
+            SubSectionArea personalDataArea = subSections.get("DATOS PERSONALES");
             String examDate = null;
 
-            if (datosPersonalesArea != null) {
+            if (personalDataArea != null) {
                 Map<String, AreaConfig> config = buildSpirometryConfig();
                 List<FieldExtractionConfig> dateFields = new ArrayList<>();
                 dateFields.add(new FieldExtractionConfig(
@@ -49,7 +50,7 @@ public class SpirometryBusiness {
                 ));
 
                 Map<String, String> dateData = plainTextExtractor.extractMultipleValues(
-                        document, dateFields, section, datosPersonalesArea
+                        document, dateFields, section, personalDataArea
                 );
 
                 String rawDate = dateData.get("Fecha:");
@@ -61,7 +62,6 @@ public class SpirometryBusiness {
                 return false;
             }
 
-            String examName = "INFORME DE ESPIROMETRÍA";
             if (examService.examAlreadyExists(examDate, examName)) {
                 System.out.println("Examen ya existe: " + examName + " - " + examDate);
                 return false;

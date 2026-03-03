@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 public class ClinicalHistoryService {
 
     private final ClinicalHistoryRepository clinicalHistoryRepository;
-    private final ClinicalHistoryMap clinicalHistoryMap;
     private final EntityJsonMapperFacade entityJsonMapperFacade;
 
     public Page<ClinicalHistoryDto> getAllClinicalHistories(int page, int size) {
@@ -28,7 +27,7 @@ public class ClinicalHistoryService {
         if (idPage.isEmpty()) {
             return Page.empty(pageable);
         }
-        Page<ClinicalHistoryDto> result = clinicalHistoryMap.EntityToDTOs(
+        Page<ClinicalHistoryDto> result = ClinicalHistoryMap.INSTANCE.EntityToDTOs(
                     new PageImpl<>(clinicalHistoryRepository.findByIdsWithDetails(idPage.getContent()),
                             pageable,
                             idPage.getTotalElements()

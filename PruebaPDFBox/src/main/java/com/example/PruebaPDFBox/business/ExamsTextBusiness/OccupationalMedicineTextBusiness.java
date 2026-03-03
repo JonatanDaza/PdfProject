@@ -38,32 +38,82 @@ public class OccupationalMedicineTextBusiness {
     private final DataValueService dataValueService;
     private final PdfSubSectionExtractor pdfSubSectionExtractor;
 
-    public boolean process(PDDocument document, SectionArea section, Worker worker) {
+    public boolean process(PDDocument document, SectionArea section, Worker worker, String examName) {
         try {
             // Extraer subsecciones primero
+            System.out.println("\n=== OCCUPATIONAL - Iniciando proceso ===");
+
             Map<String, SubSectionArea> subSections = pdfSubSectionExtractor.extract(
                     document, section, SUB_SECTION_TITLES
             );
 
+            System.out.println("\n=== OCCUPATIONAL - SubSecciones encontradas ===");
+            subSections.forEach((k, v) -> System.out.println("  [" + k + "] -> " + (v != null ? "✅" : "❌ NULL")));
+
+            // --- ANTECEDENTES DE EXPOSICIÓN LABORAL ---
+            SubSectionArea exposicionArea = subSections.get(
+                    "ANTECEDENTES DE EXPOSICIÓN LABORAL (EL PRIMERO CORRESPONDE A LA ÚLTIMA LABOR O LABOR ACTUAL)");
+            System.out.println("\n=== OCCUPATIONAL - ANTECEDENTES DE EXPOSICIÓN LABORAL -> "
+                    + (exposicionArea != null ? "✅" : "❌ NULL"));
+
+
+            // --- ACTIVIDAD FÍSICA ---
+            SubSectionArea actividadFisicaArea = subSections.get("ACTIVIDAD FÍSICA");
+            System.out.println("\n=== OCCUPATIONAL - ACTIVIDAD FÍSICA -> "
+                    + (actividadFisicaArea != null ? "✅" : "❌ NULL"));
+
+
+            // --- HÁBITOS TÓXICOS ---
+            SubSectionArea habitosArea = subSections.get("HÁBITOS TÓXICOS");
+            System.out.println("\n=== OCCUPATIONAL - HÁBITOS TÓXICOS -> "
+                    + (habitosArea != null ? "✅" : "❌ NULL"));
+
+
+            // --- EXAMEN FÍSICO ---
+            SubSectionArea examenFisicoArea = subSections.get("EXAMEN FISICO");
+            System.out.println("\n=== OCCUPATIONAL - EXAMEN FÍSICO -> "
+                    + (examenFisicoArea != null ? "✅" : "❌ NULL"));
+
+
+            // --- CONCEPTO OCUPACIONAL ---
+            SubSectionArea conceptoArea = subSections.get("CONCEPTO OCUPACIONAL");
+            System.out.println("\n=== OCCUPATIONAL - CONCEPTO OCUPACIONAL -> "
+                    + (conceptoArea != null ? "✅" : "❌ NULL"));
+
+
+            // --- CUV / CÓDIGO ---
+            SubSectionArea cuvArea = subSections.get("CÓDIGO");
+            System.out.println("\n=== OCCUPATIONAL - CÓDIGO (CUV) -> "
+                    + (cuvArea != null ? "✅" : "❌ NULL"));
+
+
+            // --- REQUISITO SALUD ---
+            SubSectionArea requisitoArea = subSections.get("REQUISITO SALUD");
+            System.out.println("\n=== OCCUPATIONAL - REQUISITO SALUD -> "
+                    + (requisitoArea != null ? "✅" : "❌ NULL"));
+
             // Extraer fecha desde DATOS PERSONALES
-            SubSectionArea datosPersonalesArea = subSections.get("DATOS PERSONALES");
+            SubSectionArea personalDataArea = subSections.get("DATOS PERSONALES");
             String examDate = null;
 
-            if (datosPersonalesArea != null) {
+            if (personalDataArea != null) {
                 Map<String, AreaConfig> config = buildEvaluationConfig();
                 List<FieldExtractionConfig> dateFields = new ArrayList<>();
                 dateFields.add(new FieldExtractionConfig(
                         "Fecha:", "Fecha:",
                         config.get("Fecha:"),
-                        FieldExtractionConfig.ExtractionStrategy.EXACT_MATCH
+                        FieldExtractionConfig.ExtractionStrategy.HORIZONTAL
                 ));
 
                 Map<String, String> dateData = plainTextExtractor.extractMultipleValues(
-                        document, dateFields, section, datosPersonalesArea
+                        document, dateFields, section, personalDataArea
                 );
 
                 String rawDate = dateData.get("Fecha:");
+                System.out.println("rawDate encontrado: '" + rawDate + "'");
+
                 examDate = plainTextExtractor.extractDate(rawDate);
+                System.out.println("examDate formateado: '" + examDate + "'");
             }
 
             if (examDate == null || examDate.isEmpty()) {
@@ -71,13 +121,18 @@ public class OccupationalMedicineTextBusiness {
                 return false;
             }
 
-            String examName = "EVALUACIÓN MEDICA OCUPACIONAL";
             if (examService.examAlreadyExists(examDate, examName)) {
                 System.out.println("Examen ya existe: " + examName + " - " + examDate);
                 return false;
             }
 
+            System.out.println("\n=== OCCUPATIONAL - Construyendo valores... ===");
             Map<String, String> values = buildDataValues(document, section, subSections);
+
+            System.out.println("\n=== OCCUPATIONAL - Valores construidos ===");
+            values.forEach((k, v) -> System.out.println("  [" + k + "] -> '" + v + "' " + (v == null ? "❌ NULL" : "✅")));
+
+            System.out.println("\n=== OCCUPATIONAL - Guardando en BD... ===");
 
             ClinicalHistory clinicalHistory = clinicalHistoryService.findOrCreate(worker, examDate);
             Exam exam = examService.save(examName, examDate, worker, clinicalHistory);
@@ -234,7 +289,7 @@ public class OccupationalMedicineTextBusiness {
 
     private List<FieldExtractionConfig> buildCuvFields(Map<String, AreaConfig> config) {
         List<FieldExtractionConfig> fields = new ArrayList<>();
-        fields.add(new FieldExtractionConfig("Diagnósticos", "Diagnósticos",
+        fields.add(new FieldExtractionConfig("Diagnósticos", "Nombre del Diagnóstico",
                 config.get("Diagnósticos"), FieldExtractionConfig.ExtractionStrategy.VERTICAL));
         fields.add(new FieldExtractionConfig("Código", "Código de Examen",
                 config.get("Código"), FieldExtractionConfig.ExtractionStrategy.VERTICAL));

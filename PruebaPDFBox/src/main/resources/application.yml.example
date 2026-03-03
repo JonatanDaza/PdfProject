@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: NameProject
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/DB_Name
+    username: username
+    password: password
+    driver-class-name: org.postgresql.Driver
+
+server:
+  port: Port_Of_Application
+
+jwt:
+  secret: Secret_Key_For_JWT
+  expiration: Time_In_Milliseconds_For_JWT_Expiration

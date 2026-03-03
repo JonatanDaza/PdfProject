@@ -32,12 +32,12 @@ public class DataTypeSeeder {
         List<String> typeNames = Arrays.asList(
                 "Tiempo de Exposición", "Actividades Manuales",
                 "Ejercicios o Deportes", "Consumidor de Alcohol",
-                "Fumador Actual", "Tensión Arterial", "Frecuencia Cardíaca",
-                "Frecuencia Respiratoria", "Lateralidad Dominante", "Perímetro Abdominal",
-                "Peso", "Talla", "IMC", "Concepto Ocupacional", "Diagnósticos",
+                "Fumador Actual", "Peso", "Frecuencia Respiratoria", "Tensión Arterial",
+                "Frecuencia Cardíaca", "Lateralidad Dominante", "Perímetro Abdominal",
+                "Talla", "IMC", "Concepto Ocupacional",
                 "Código de Examen", "Requisitos de Salud", "Oído derecho",
                 "Oído izquierdo", "Nombre del Diagnóstico", "Ponderado Decibelios",
-                "Recomendaciones", "Observaciones", "DIAGNÓSTICO",
+                "Recomendaciones", "Observaciones",
                 "Conducta Y/O Recomendaciones", "HEMATOCRITO", "HEMOGLOBINA",
                 "RTO.BLANCOS", "RTO.PLAQUETAS", "GLICEMIA", "COLESTEROL TOTAL",
                 "COLESTEROL HDL", "COLESTEROL LDL", "TRIGLICERIDOS", "Interpretación"

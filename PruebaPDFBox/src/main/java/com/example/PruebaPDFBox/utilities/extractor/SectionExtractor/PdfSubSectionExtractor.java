@@ -44,8 +44,11 @@ public class PdfSubSectionExtractor {
                 )
                 .sorted(Comparator
                                 .comparingInt(PdfTextBlock::page)
-                                .thenComparing(PdfTextBlock::y)
-                        // SIN .reversed() — orden ascendente (de arriba a abajo)
+                                .thenComparing(PdfTextBlock::y)//.reversed() // SIN .reversed() — orden ascendente (de arriba a abajo)
+//                .sorted(
+//                        Comparator
+//                                .comparingInt(PdfTextBlock::page)
+//                                .thenComparing(Comparator.comparing(PdfTextBlock::y).reversed())
                 )
                 .toList();
 

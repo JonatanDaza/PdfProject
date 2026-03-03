@@ -39,6 +39,51 @@ public class ImageTextExtractor {
         return tesseractThreadLocal.get();
     }
 
+    public String extractTextFromSingleImage(BufferedImage image) {
+        try {
+            if (!auxiliar.isValidTableImage(image)) {
+                return "";
+            }
+
+            BufferedImage optimizedImage = auxiliar.optimizeImageForOCR(image, MIN_IMAGE_WIDTH);
+            Tesseract tesseract = getTesseract();
+            auxiliar.configureTesseract(tesseract);
+
+            // Usar PSM 6 para bloque de texto
+            tesseract.setPageSegMode(6);
+            String text = tesseract.doOCR(optimizedImage);
+
+            return text.replaceAll("\\r?\\n+", " ").trim();
+
+//            if (!auxiliar.isValidTableImage(image)) {
+//                return "";
+//            }
+//
+//            BufferedImage optimizedImage = auxiliar.optimizeImageForOCR(image, MIN_IMAGE_WIDTH);
+//            Tesseract tesseract = getTesseract();
+//            auxiliar.configureTesseract(tesseract);
+//
+//            // Probar con diferentes PSM modes para mejor detección de títulos
+//            int[] titlePsmModes = {6, 3, 1}; // PSM 6: bloque uniforme, 3: línea, 1: texto automático
+//
+//            for (int psm : titlePsmModes) {
+//                tesseract.setPageSegMode(psm);
+//                String text = tesseract.doOCR(optimizedImage);
+//
+//                if (!auxiliar.isBlank(text)) {
+//                    // Limpiar el texto para mejor coincidencia
+//                    text = text.replaceAll("\\r?\\n+", " ").trim();
+//                    return text;
+//                }
+//            }
+//
+//            return "";
+        } catch (Exception e) {
+            System.err.println("Error en OCR simple: " + e.getMessage());
+            return "";
+        }
+    }
+
     public Map<String, String> extractTextFromTable(
             PDDocument document,
             List<Integer> targetPages,
@@ -50,7 +95,7 @@ public class ImageTextExtractor {
             if (!auxiliar.isValidPage(document, pageNum)) continue;
 
             List<BufferedImage> images = pdfImgSectionExtractor.extractImages(
-                    document, new SectionArea(pageNum, 0, pageNum, Float.MAX_VALUE)
+                    document, new SectionArea(pageNum, 0, pageNum, Float.MAX_VALUE, "")
             );
 
             for (BufferedImage image : images) {

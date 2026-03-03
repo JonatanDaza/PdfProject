@@ -28,7 +28,7 @@ public class ImageTextExtractorAuxiliary {
         return convertToGrayscale(original);
     }
 
-    public BufferedImage scaleImage(BufferedImage original, int targetMinWidth) {
+    private BufferedImage scaleImage(BufferedImage original, int targetMinWidth) {
         double scale = (double) targetMinWidth / original.getWidth();
         int targetWidth = (int) (original.getWidth() * scale);
         int targetHeight = (int) (original.getHeight() * scale);
@@ -45,7 +45,7 @@ public class ImageTextExtractorAuxiliary {
         return scaled;
     }
 
-    public BufferedImage convertToGrayscale(BufferedImage image) {
+    private BufferedImage convertToGrayscale(BufferedImage image) {
         BufferedImage grayscale = new BufferedImage(
                 image.getWidth(), image.getHeight(), BufferedImage.TYPE_BYTE_GRAY
         );
@@ -90,7 +90,7 @@ public class ImageTextExtractorAuxiliary {
         System.out.println("=======================================");
     }
 
-    public void logExtractedValue(String label, String value) {
+    private void logExtractedValue(String label, String value) {
         System.out.println("Label: " + label + " -> Value: " + value);
     }
 
@@ -110,7 +110,7 @@ public class ImageTextExtractorAuxiliary {
         return data;
     }
 
-    public String findValueForLabelInLines(String label, String[] lines) {
+    private String findValueForLabelInLines(String label, String[] lines) {
         String normalizedLabel = normalize(label);
 
         for (int i = 0; i < lines.length; i++) {
@@ -127,7 +127,7 @@ public class ImageTextExtractorAuxiliary {
         return null;
     }
 
-    public String extractValueAfterLabel(String line, String label) {
+    private String extractValueAfterLabel(String line, String label) {
         int labelPos = line.toUpperCase().indexOf(label.toUpperCase());
         if (labelPos == -1) return null;
 
@@ -152,7 +152,7 @@ public class ImageTextExtractorAuxiliary {
         return null;
     }
 
-    public String extractFirstNumeric(String line) {
+    private String extractFirstNumeric(String line) {
         return Arrays.stream(line.split("\\s+"))
                 .filter(this::isValidNumericValue)
                 .findFirst()
@@ -162,7 +162,7 @@ public class ImageTextExtractorAuxiliary {
 
     // ===================== UTILITY METHODS =====================
 
-    public String normalize(String text) {
+    private String normalize(String text) {
         if (text == null) return "";
         return text.toUpperCase().replaceAll("[.\\s]+", "");
     }
@@ -175,7 +175,7 @@ public class ImageTextExtractorAuxiliary {
         return !isBlank(s);
     }
 
-    public boolean isValidNumericValue(String token) {
+    private boolean isValidNumericValue(String token) {
         if (token == null || token.isEmpty()) return false;
 
         token = token.replace("*", "").trim();
@@ -186,7 +186,7 @@ public class ImageTextExtractorAuxiliary {
         return token.matches("^[0-9]+([.,\\s][0-9]+)*$");
     }
 
-    public String clean(String value) {
+    private String clean(String value) {
         if (value == null) return "";
 
         return value.trim()

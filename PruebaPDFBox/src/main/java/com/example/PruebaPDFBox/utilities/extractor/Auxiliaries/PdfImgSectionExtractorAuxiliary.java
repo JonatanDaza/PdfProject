@@ -12,14 +12,13 @@ import org.springframework.http.HttpStatus;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.*;
 import java.util.List;
 
 public class PdfImgSectionExtractorAuxiliary {
 
-    private static final int MIN_EMBEDDED_WIDTH = 700;
-    private static final int MIN_EMBEDDED_HEIGHT = 300;
+    public static final int MIN_EMBEDDED_WIDTH = 700;
+    public static final int MIN_EMBEDDED_HEIGHT = 300;
 
     public List<BufferedImage> extractEmbeddedImages(PDPage page, int pageNum) {
         try {

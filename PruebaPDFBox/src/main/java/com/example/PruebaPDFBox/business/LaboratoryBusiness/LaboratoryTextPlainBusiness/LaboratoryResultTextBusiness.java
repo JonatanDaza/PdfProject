@@ -1,4 +1,4 @@
-package com.example.PruebaPDFBox.business.ExamsTextBusiness;
+package com.example.PruebaPDFBox.business.LaboratoryBusiness.LaboratoryTextPlainBusiness;
 
 import com.example.PruebaPDFBox.model.*;
 import com.example.PruebaPDFBox.record.AreaConfig;
@@ -10,7 +10,6 @@ import com.example.PruebaPDFBox.service.ServiceEntity.DataValueService;
 import com.example.PruebaPDFBox.service.ServiceEntity.ExamService;
 import com.example.PruebaPDFBox.utilities.extractor.SectionExtractor.PdfSubSectionExtractor;
 import com.example.PruebaPDFBox.utilities.extractor.TextExtractor.PlainTextExtractor;
-import com.example.PruebaPDFBox.utilities.mapper.MapperJsons.MorphologyStudyMapper;
 import lombok.RequiredArgsConstructor;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.stereotype.Component;
@@ -28,7 +27,7 @@ public class LaboratoryResultTextBusiness {
     private final DataValueService dataValueService;
     private final PdfSubSectionExtractor pdfSubSectionExtractor;
 
-    public boolean process(PDDocument document, SectionArea section, Worker worker) throws Exception {
+    public boolean process(PDDocument document, SectionArea section, Worker worker, String examName) throws Exception {
         try {
             // Extraer subsecciones primero
             Map<String, SubSectionArea> subSections = pdfSubSectionExtractor.extract(
@@ -36,10 +35,10 @@ public class LaboratoryResultTextBusiness {
             );
 
             // Extraer fecha desde DATOS PERSONALES
-            SubSectionArea datosPersonalesArea = subSections.get("DATOS PERSONALES");
+            SubSectionArea personalDataArea = subSections.get("DATOS PERSONALES");
             String examDate = null;
 
-            if (datosPersonalesArea != null) {
+            if (personalDataArea != null) {
                 Map<String, AreaConfig> config = buildLaboratoryConfig();
                 List<FieldExtractionConfig> dateFields = new ArrayList<>();
                 dateFields.add(new FieldExtractionConfig(
@@ -49,7 +48,7 @@ public class LaboratoryResultTextBusiness {
                 ));
 
                 Map<String, String> dateData = plainTextExtractor.extractMultipleValues(
-                        document, dateFields, section, datosPersonalesArea
+                        document, dateFields, section, personalDataArea
                 );
 
                 String rawDate = dateData.get("Fecha:");
@@ -61,7 +60,6 @@ public class LaboratoryResultTextBusiness {
                 return false;
             }
 
-            String examName = "AUDIOMETRÍA";
             if (examService.examAlreadyExists(examDate, examName)) {
                 System.out.println("Examen ya existe: " + examName + " - " + examDate);
                 return false;

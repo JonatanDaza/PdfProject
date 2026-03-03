@@ -1,47 +1,61 @@
 package com.example.PruebaPDFBox.business;
 
-// import com.example.PruebaPDFBox.business.ExamsTextBusiness.AudiometryTextBusiness;
-// import com.example.PruebaPDFBox.business.ExamsImgBusiness.LaboratoryResultImgBusiness;
-// import com.example.PruebaPDFBox.business.ExamsTextBusiness.LaboratoryResultTextBusiness;
-// import com.example.PruebaPDFBox.business.ExamsTextBusiness.OptometryTextBusiness;
-// import com.example.PruebaPDFBox.business.ExamsTextBusiness.SpirometryBusiness;
-import com.example.PruebaPDFBox.business.ExamsTextBusiness.OccupationalMedicineTextBusiness;
-import com.example.PruebaPDFBox.business.ExamsTextBusiness.WorkerExamBusiness;
-import com.example.PruebaPDFBox.model.Worker;
-import com.example.PruebaPDFBox.record.SectionArea;
-import com.example.PruebaPDFBox.repository.WorkerRepository;
-import com.example.PruebaPDFBox.service.ServiceEntity.WorkerService;
-import com.example.PruebaPDFBox.utilities.extractor.SectionExtractor.PdfSectionExtractor;
+import java.util.*;
 
-import lombok.RequiredArgsConstructor;
-
+import com.example.PruebaPDFBox.business.LaboratoryBusiness.ExamImgBusiness;
+import com.example.PruebaPDFBox.utilities.extractor.SectionExtractor.PdfImgSectionExtractor;
+import com.example.PruebaPDFBox.utilities.extractor.SectionExtractor.PdfOcrSectionDetector;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.*;
+import com.example.PruebaPDFBox.business.ExamsTextBusiness.SpirometryBusiness;
+import com.example.PruebaPDFBox.business.LaboratoryBusiness.LaboratoryTextPlainBusiness.LaboratoryResultTextBusiness;
+import com.example.PruebaPDFBox.business.ExamsTextBusiness.OptometryTextBusiness;
+import com.example.PruebaPDFBox.business.ExamsTextBusiness.AudiometryTextBusiness;
+import com.example.PruebaPDFBox.business.ExamsTextBusiness.OccupationalMedicineTextBusiness;
+import com.example.PruebaPDFBox.business.ExamsTextBusiness.WorkerExamBusiness;
+import com.example.PruebaPDFBox.model.Worker;
+import com.example.PruebaPDFBox.record.SectionArea;
+import com.example.PruebaPDFBox.service.ServiceEntity.WorkerService;
+import com.example.PruebaPDFBox.utilities.extractor.SectionExtractor.PdfSectionExtractor;
+
+import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
 public class PdfProcessingBusiness {
 
     private final PdfSectionExtractor pdfSectionExtractor;
-    private final WorkerRepository workerRepository;
+    private final PdfOcrSectionDetector pdfOcrSectionDetector;
+    private final PdfImgSectionExtractor pdfImgSectionExtractor;
+    private final ExamImgBusiness examImgBusiness;
     private final WorkerExamBusiness workerExamBusiness;
-    private final OccupationalMedicineTextBusiness occupationalMedicineTextBusiness;
     private final WorkerService workerService;
-    // private final AudiometryTextBusiness audiometryTextBusiness;
-    // private final OptometryTextBusiness optometryTextBusiness;
-    // private final LaboratoryResultImgBusiness laboratoryResultImgBusiness;
-    // private final SpirometryBusiness spirometryBusiness;
-    // private final LaboratoryResultTextBusiness laboratoryResultTextBusiness;
+    private final OccupationalMedicineTextBusiness occupationalMedicineTextBusiness;
+    private final AudiometryTextBusiness audiometryTextBusiness;
+    private final OptometryTextBusiness optometryTextBusiness;
+    private final SpirometryBusiness spirometryBusiness;
+    private final LaboratoryResultTextBusiness laboratoryResultTextBusiness;
 
     public Map<String, Object> processPdf(MultipartFile file) {
 
         try (PDDocument document = PDDocument.load(file.getInputStream())) {
 
+            // Mapper Sections of Plain Text
             Map<String, SectionArea> sections = pdfSectionExtractor.extract(document);
+            System.out.println("Secciones por texto: " + sections.keySet());
 
+            // Mapper Sections of Images
+            Map<String, SectionArea> imageSections = pdfOcrSectionDetector.detectSectionsInImages(document);
+
+            if (!imageSections.isEmpty()) {
+                System.out.println("Secciones detectadas en imágenes: " + imageSections.keySet());
+                sections.putAll(imageSections); // Combinar ambos mapas
+            }
+
+            Worker worker = null;
+            boolean workerPersisted = false;
             int examsProcessed = 0;
 
             for (Map.Entry<String, SectionArea> entry : sections.entrySet()) {
@@ -49,55 +63,91 @@ public class PdfProcessingBusiness {
                 String sectionKey = entry.getKey();
                 SectionArea sectionArea = entry.getValue();
 
-                Worker worker = workerExamBusiness.processWorker(document, sectionArea);
+                System.out.println("Procesando sección: " + sectionKey +
+                        " (páginas " + (sectionArea.startPage() + 1) +
+                        " - " + (sectionArea.endPage() + 1) + ")");
 
+                // Intentar extraer Worker si aún no existe
                 if (worker == null) {
-                    throw new RuntimeException("No se pudo extraer datos válidos del trabajador");
-                }
+                    try {
+                        worker = workerExamBusiness.processWorker(document, sectionArea);
 
-                worker = workerService.findOrCreate(worker);
+                        if (worker != null) {
+                            System.out.println("Worker extraído desde: " + sectionArea.examName());
 
-                if ("OCCUPATIONAL_MEDICINE_LABEL".equals(sectionKey)) {
-                    if (occupationalMedicineTextBusiness.process(document, sectionArea, worker)) {
-                        examsProcessed++;
+                            worker = workerService.findOrCreate(worker);
+                            workerPersisted = true;
+                        }
+
+                    } catch (Exception e) {
+                        System.err.println("Error extrayendo Worker desde "
+                                + sectionArea.examName() + ": " + e.getMessage());
                     }
                 }
 
-                // if ("AUDIOMETRY_LABEL".equals(sectionKey)) {
-                //     if (audiometryTextBusiness.process(document, sectionArea, worker, sectionKey)) {
-                //         examsProcessed++;
-                //     }
-                // }
+                // Procesar exámenes SOLO si el Worker ya está listo
+                if (workerPersisted) {
 
-                // if ("OPTOMETRY_LABEL".equals(sectionKey)) {
-                //     if (optometryTextBusiness.process(document, sectionArea, worker, sectionKey)) {
-                //         examsProcessed++;
-                //     }
-                // }
-                
-//                if ("SPIROMETRY_LABEL".equals(entry.getKey())) {
-//                    if (spirometryBusiness.process(document, entry.getValue(), worker, entry.getKey())) {
-//                        examsProcessed++;
-//                    }
-//                }
+                    boolean processed = false;
 
-                // if ("LABORATORY_LABEL".equals(sectionKey)) {
-                //     if (laboratoryResultImgBusiness.process(document, sectionArea, sectionKey, worker)) {
-                //         examsProcessed++;
-                //     }
-                // }
+                    if (pdfImgSectionExtractor.hasValidImages(document, sectionArea)) {
+                        System.out.println("Sección con imágenes: " + sectionKey);
 
-                // if ("LABORATORY_LABEL_TEXT".equals(sectionKey)) {
-                //     if (laboratoryResultTextBusiness.process(document, sectionArea, sectionKey, worker)) {
-                //         examsProcessed++;
-                //     }
-                // }
+                        boolean imgProcessed = examImgBusiness.processExam(
+                                document,
+                                sectionKey,
+                                sectionArea,
+                                worker
+                        );
+
+                        processed = processed || imgProcessed;
+                    }
+
+                    boolean textProcessed = switch (sectionKey) {
+
+                        case "OCCUPATIONAL_MEDICINE_LABEL" ->
+                                occupationalMedicineTextBusiness.process(
+                                        document, sectionArea, worker, sectionArea.examName());
+
+                        case "AUDIOMETRY_LABEL" ->
+                                audiometryTextBusiness.process(
+                                        document, sectionArea, worker, sectionArea.examName());
+
+                        case "OPTOMETRY_LABEL" ->
+                                optometryTextBusiness.process(
+                                        document, sectionArea, worker, sectionArea.examName());
+//
+//                        case "SPIROMETRY_LABEL" ->
+//                                spirometryBusiness.process(
+//                                        document, sectionArea, worker, sectionKey);
+//
+//                        case "LABORATORY_LABEL_TEXT" ->
+//                                laboratoryResultTextBusiness.process(
+//                                        document, sectionArea, worker);
+//
+                        default -> false;
+                    };
+
+                    processed = processed || textProcessed;
+
+                    if (processed) {
+                        examsProcessed++;
+                        System.out.println("Examen procesado: " + sectionArea.examName());
+                    } else {
+                        System.out.println("No se procesó: " + sectionArea.examName());
+                    }
+                }
+            }
+
+            if (worker == null) {
+                throw new RuntimeException("No se pudo extraer datos válidos del trabajador");
             }
 
             Map<String, Object> response = new HashMap<>();
             response.put("message", "PDF procesado correctamente");
             response.put("examsProcessed", examsProcessed);
             response.put("totalPages", document.getNumberOfPages());
+            response.put("sectionsFound", sections.keySet());
 
             return response;
 

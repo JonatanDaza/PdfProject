@@ -40,7 +40,21 @@ public class WorkerExamBusiness {
                 WORKER_SUB_SECTION_TITLES
         );
 
+        // DEBUG: ver subsecciones encontradas
+        System.out.println("\n=== WORKER - SubSecciones encontradas ===");
+        subSections.forEach((k, v) -> System.out.println("  [" + k + "] -> " + (v != null ? "✅" : "❌ NULL")));
+        System.out.println("=== SECTION DEBUG ===");
+        System.out.println("  startPage: " + section.startPage() + ", startY: " + section.startY());
+        System.out.println("  endPage:   " + section.endPage()   + ", endY:   " + section.endY());
+        System.out.println("  examName:  " + section.examName());
+
         SubSectionArea workerArea = subSections.get("DATOS PERSONALES");
+        if (workerArea != null) {
+            System.out.println("=== SUBSECTION DEBUG ===");
+            System.out.println("  page:   " + workerArea.page());
+            System.out.println("  startY: " + workerArea.startY());
+            System.out.println("  endY:   " + workerArea.endY());
+        }
 
         if (workerArea == null) {
             System.err.println("No se encontró subsección DATOS PERSONALES");
@@ -59,17 +73,48 @@ public class WorkerExamBusiness {
                 workerArea
         );
 
+        // DEBUG: ver qué se extrajo
+        System.out.println("\n=== WORKER - Datos extraídos ===");
+        extractedData.forEach((k, v) ->
+                System.out.println("  [" + k + "] -> '" + v + "' " + (v == null || v.trim().isEmpty() ? "❌ VACÍO" : "✅"))
+        );
+
         String rawCC = extractedData.get("CC:");
         String cc = plainTextExtractor.extractFirstNumber(rawCC);
 
+        System.out.println("\n=== WORKER - CC ===");
+        System.out.println("  rawCC    -> '" + rawCC + "'");
+        System.out.println("  cc (num) -> '" + cc + "' " + (cc == null || cc.trim().isEmpty() ? "❌ VACÍO" : "✅"));
+
+        // Validar solo campos obligatorios
         if (cc == null || cc.trim().isEmpty()) {
-            System.err.println("No se encontró CC válido");
+            System.err.println("❌ CC obligatorio no encontrado");
             return null;
         }
 
+        String rawGenero = extractedData.getOrDefault("Genero:", "");
+        if (rawGenero.trim().isEmpty()) rawGenero = extractedData.getOrDefault("Género:", "");
+        if (rawGenero.trim().isEmpty()) rawGenero = extractedData.getOrDefault("Sexo:", "");
+
+        if (rawGenero == null || rawGenero.trim().isEmpty()) {
+            System.err.println("❌ Género obligatorio no encontrado");
+            return null;
+        }
+        extractedData.put("Genero:", rawGenero);
+
         String rawAge = extractedData.get("Edad:");
         String age = plainTextExtractor.extractFirstNumber(rawAge);
-        extractedData.put("Edad:", age != null ? age : "");
+
+        System.out.println("  rawAge   -> '" + rawAge + "'");
+        System.out.println("  age(num) -> '" + age + "'");
+
+        if (age == null || age.trim().isEmpty()) {
+            System.err.println("❌ Edad obligatoria no encontrada");
+            return null;
+        }
+
+        // Campos opcionales: Estado Civil y Nivel Educativo pueden quedar vacíos
+        extractedData.put("Edad:", age);
 
         return workerService.buildFromExtractedData(extractedData, cc);
     }
@@ -81,6 +126,10 @@ public class WorkerExamBusiness {
                 config.get("CC:"), FieldExtractionConfig.ExtractionStrategy.EXACT_MATCH));
         fields.add(new FieldExtractionConfig("Genero:", "Genero:",
                 config.get("Genero:"), FieldExtractionConfig.ExtractionStrategy.EXACT_MATCH));
+        fields.add(new FieldExtractionConfig("Género:", "Género:",
+                config.get("Género:"), FieldExtractionConfig.ExtractionStrategy.EXACT_MATCH));
+        fields.add(new FieldExtractionConfig("Sexo:", "Sexo:",
+                config.get("Sexo:"), FieldExtractionConfig.ExtractionStrategy.EXACT_MATCH));
         fields.add(new FieldExtractionConfig("Edad:", "Edad:",
                 config.get("Edad:"), FieldExtractionConfig.ExtractionStrategy.EXACT_MATCH));
         fields.add(new FieldExtractionConfig("Estado Civil:", "Estado Civil:",
@@ -96,6 +145,8 @@ public class WorkerExamBusiness {
 
         config.put("CC:", new AreaConfig(0, 172, 12));
         config.put("Genero:", new AreaConfig(0, 192, 12));
+        config.put("Género:", new AreaConfig(0, 192, 12));
+        config.put("Sexo:", new AreaConfig(0, 192, 12));
         config.put("Edad:", new AreaConfig(0, 192, 12));
         config.put("Estado Civil:", new AreaConfig(40, 80, 12));
         config.put("Nivel Educativo:", new AreaConfig(40, 120, 12));

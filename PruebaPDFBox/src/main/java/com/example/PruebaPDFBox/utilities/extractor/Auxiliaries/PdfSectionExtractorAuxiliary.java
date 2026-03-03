@@ -18,7 +18,6 @@ public class PdfSectionExtractorAuxiliary {
             "OPTOMETRY_LABEL", Set.of("EXAMEN DE OPTOMETRIA", "EXAMEN DE CONSULTA DE OPTOMETRIA", "EXAMEN DE VISIOMETRIA"),
             "OCCUPATIONAL_MEDICINE_LABEL", Set.of("EVALUACIÓN MEDICA OCUPACIONAL"),
             "AUDIOMETRY_LABEL", Set.of("AUDIOMETRÍA"),
-            "LABORATORY_LABEL", Set.of("Entidad:", "Laboratorio N°: 69.011"),
             "LABORATORY_LABEL_TEXT", Set.of("INFORME DE RESULTADOS", "EXTENDIDO DE SANGRE PERIFERICA, ESTUDIO DE MORFOLOGIA"),
             "PSYCHOMOTOR_LABEL", Set.of("Resumen de Resultados Test PSICO-MOTRÍZ"),
             "PSYCHOLOGY_LABEL", Set.of("PSICOLOGÍA OCUPACIONAL"),
