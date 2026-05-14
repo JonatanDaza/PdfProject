@@ -1,11 +1,13 @@
 package com.example.PruebaPDFBox.controller;
 
 import com.example.PruebaPDFBox.dto.ClinicalHistoryDto;
+import com.example.PruebaPDFBox.dto.ExamDto;
 import com.example.PruebaPDFBox.record.PaginationRequest;
 import com.example.PruebaPDFBox.service.ServiceEntity.ClinicalHistoryService;
 import com.example.PruebaPDFBox.service.PdfProcessingService;
 import com.example.PruebaPDFBox.utilities.Infrastructure.http.ResponseHttpApi;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
@@ -74,6 +77,24 @@ public class PdfProcessingController {
             return ResponseEntity.ok("Archivo subido exitosamente en: " + destinationPath);
         } catch (Exception e) {
             throw new RuntimeException("Error al guardar el archivo: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/{clinicalHistoryId}/exams")
+    public Map<String, Object> getExamsByClinicalHistoryId(@PathVariable Long clinicalHistoryId) {
+        try {
+            List<ExamDto> exams = clinicalHistoryService.getExamsByClinicalHistoryId(clinicalHistoryId);
+            return ResponseHttpApi.responseHttpFindAllList(
+                    exams,
+                    ResponseHttpApi.CODE_OK,
+                    "Query ok",
+                    exams.size()
+            );
+        } catch (Exception e) {
+            return ResponseHttpApi.responseHttpError(
+                    "Error retrieving exams: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
         }
     }
 }

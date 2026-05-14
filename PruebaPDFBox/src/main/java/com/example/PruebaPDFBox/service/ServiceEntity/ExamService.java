@@ -1,12 +1,16 @@
 package com.example.PruebaPDFBox.service.ServiceEntity;
 
+import com.example.PruebaPDFBox.dto.ExamDto;
 import com.example.PruebaPDFBox.model.ClinicalHistory;
 import com.example.PruebaPDFBox.model.Exam;
 import com.example.PruebaPDFBox.model.Worker;
 import com.example.PruebaPDFBox.repository.ExamRepository;
+import com.example.PruebaPDFBox.utilities.mapper.ExamMap;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -31,5 +35,11 @@ public class ExamService {
     @Transactional
     public Exam save(Exam exam) {
         return examRepository.save(exam);
+    }
+
+    @Transactional
+    public List<ExamDto> getExamsByClinicalHistoryId(Long clinicalHistoryId) {
+        List<Exam> exams = examRepository.findByClinicalHistoryId(clinicalHistoryId);
+        return ExamMap.INSTANCE.EntityToDTOs(exams);
     }
 }
