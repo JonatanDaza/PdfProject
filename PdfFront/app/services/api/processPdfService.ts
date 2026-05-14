@@ -1,5 +1,11 @@
 import { API } from "./api";
-import { PaginationResponse, BaseEntity, ClinicalHistoryDto } from "@/types/api";
+import {
+    PaginationResponse,
+    ListResponse,
+    BaseEntity,
+    ClinicalHistoryDto,
+    ExamDto,
+} from "@/types/api";
 
 export const extractHC = async <T extends BaseEntity = ClinicalHistoryDto>(file: File): Promise<T> => {
     const formData = new FormData();
@@ -37,5 +43,12 @@ export const uploadHC = async (file: File): Promise<string> => {
             'Content-Type': 'multipart/form-data',
         }
     });
+    return data;
+}
+
+export const getExamsByClinicalHistoryId = async (
+    clinicalHistoryId: number
+): Promise<ListResponse<ExamDto>> => {
+    const { data } = await API.api.get<ListResponse<ExamDto>>(`/${clinicalHistoryId}/exams`);
     return data;
 }

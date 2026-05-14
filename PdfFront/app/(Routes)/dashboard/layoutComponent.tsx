@@ -34,8 +34,7 @@ const LayoutContent: React.FC<LayoutContentProps> = ({ children }) => {
                     />
                         {/* Contenido principal */}
                         <div>
-                            {/* <main className="mt-14 sm:mt-16 flex-1 p-4 sm:p-6 lg:p-8"> */}
-                            <main className="p-3 pt-11">
+                            <main className="p-3 pt-16 sm:pt-20">
                                 {children}
                             </main>
                         </div>

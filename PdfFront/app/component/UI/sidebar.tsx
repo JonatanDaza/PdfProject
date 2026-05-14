@@ -109,7 +109,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onCollapsedChange }) => {
                                     `}
                                     title={isCollapsed ? item.label : ''}
                                 >
-                                    <span className="flex-shrink-0">
+                                    <span className="shrink-0">
                                         {item.icon}
                                     </span>
                                     {!isCollapsed && (

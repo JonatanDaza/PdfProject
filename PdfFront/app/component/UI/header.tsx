@@ -53,19 +53,15 @@ const Header: React.FC<HeaderProps> = ({ sidebarCollapsed = false }) => {
                 right-0
             `}
         >
-            <div className="flex items-center gap-2 sm:gap-4">
-                {/* <h1 className="text-gray-800 font-bold text-3xl">
-                    Historias Clínicas
-                </h1> */}
-            </div>
+            <div className="flex items-center gap-2 sm:gap-4" />
 
             {/* Menú de usuario */}
             <div className="relative  border border-gray-300 rounded-lg" ref={menuRef}>
                 <button
                     onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                    className="flex items-center gap-2 sm:gap-3 bg-white/10 min-h-auto py-3 px-8 rounded-lg text-white transition-colors active:bg-white/30"
+                    className="flex items-center gap-2 sm:gap-3 bg-white/10 min-h-auto py-2 px-4 sm:px-8 rounded-lg text-white transition-colors active:bg-white/30"
                 >
-                    <span className="hidden sm:block text-gray-800 text-sm font-medium max-w-[150px] truncate">
+                    <span className="hidden sm:block text-gray-800 text-sm font-medium max-w-37.5 truncate">
                         {user?.name || "User"}
                     </span>
                     {/* <div className="w-8 h-8 sm:w-9 sm:h-9 bg-blue-200 rounded-full flex items-center justify-center font-bold text-sm">
