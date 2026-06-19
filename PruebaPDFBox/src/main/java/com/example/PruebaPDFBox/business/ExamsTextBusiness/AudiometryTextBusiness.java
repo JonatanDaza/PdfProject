@@ -132,7 +132,6 @@ public class AudiometryTextBusiness {
         }
     }
 
-
     private Map<String, String> buildDataValues(
             PDDocument document,
             SectionArea section,

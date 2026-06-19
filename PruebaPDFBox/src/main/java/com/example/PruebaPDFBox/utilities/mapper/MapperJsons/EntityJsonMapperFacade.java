@@ -5,6 +5,7 @@ import com.example.PruebaPDFBox.dto.DTOJson.*;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class EntityJsonMapperFacade {
@@ -61,17 +62,17 @@ public class EntityJsonMapperFacade {
                 )
         );
     }
-    // WeightedDecibels
 
+    // WeightedDecibels
     public String parseWeightedDecibelsToJson(String rawText) {
         return weightedDecibelsMapper.parseToJson(rawText);
     }
 
-    public List<WeightedDecibelsDto> weightedDecibelsFromJson(String json) {
+    public List<Map<String, String>> weightedDecibelsFromJson(String json) {
         return weightedDecibelsMapper.fromJson(json);
     }
 
-    public String weightedDecibelsToJson(List<WeightedDecibelsDto> dtos) {
+    public String weightedDecibelsToJson(List<Map<String, String>> dtos) {
         return weightedDecibelsMapper.toJson(dtos);
     }
     // Observations

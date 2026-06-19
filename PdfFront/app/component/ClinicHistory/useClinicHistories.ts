@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ClinicalHistoryDto, ExamDto } from "@/types/api";
 import { getAllHC, getExamsByClinicalHistoryId } from "@/services/api/processPdfService";
 
-const PAGE_SIZE = 9;
+const PAGE_SIZE = 10;
 
 interface UseClinicHistoriesState {
     histories: ClinicalHistoryDto[];
@@ -12,9 +12,6 @@ interface UseClinicHistoriesState {
     error: string | null;
     currentPage: number;
     totalPages: number;
-    selectedHistory: ClinicalHistoryDto | null;
-    detailLoading: boolean;
-    detailError: string | null;
 }
 
 export const useClinicHistories = () => {
@@ -24,9 +21,6 @@ export const useClinicHistories = () => {
         error: null,
         currentPage: 0,
         totalPages: 0,
-        selectedHistory: null,
-        detailLoading: false,
-        detailError: null,
     });
 
     const loadHistories = useCallback(async (page: number) => {
@@ -47,38 +41,6 @@ export const useClinicHistories = () => {
         }
     }, []);
 
-    const openHistoryDetail = useCallback(async (history: ClinicalHistoryDto) => {
-        setState((prev) => ({ ...prev, detailLoading: true, detailError: null }));
-        try {
-            const examsResponse = await getExamsByClinicalHistoryId(Number(history.id));
-            setState((prev) => ({
-                ...prev,
-                selectedHistory: {
-                    ...history,
-                    exams: examsResponse.data ?? [],
-                },
-                detailLoading: false,
-            }));
-        } catch (err) {
-            const message =
-                err instanceof Error ? err.message : "No se pudieron cargar los exámenes.";
-            setState((prev) => ({
-                ...prev,
-                detailError: message,
-                selectedHistory: history,
-                detailLoading: false,
-            }));
-        }
-    }, []);
-
-    const closeHistoryDetail = useCallback(() => {
-        setState((prev) => ({
-            ...prev,
-            selectedHistory: null,
-            detailError: null,
-        }));
-    }, []);
-
     const goToPage = useCallback(
         (page: number) => {
             const nextPage = Math.max(0, Math.min(page, state.totalPages - 1));
@@ -94,8 +56,42 @@ export const useClinicHistories = () => {
     return {
         ...state,
         loadHistories,
-        openHistoryDetail,
-        closeHistoryDetail,
         goToPage,
     };
+};
+
+interface UseClinicHistoryDetailState {
+    exams: ExamDto[];
+    loading: boolean;
+    error: string | null;
+}
+
+export const useClinicHistoryDetail = (id: number) => {
+    const [state, setState] = useState<UseClinicHistoryDetailState>({
+        exams: [],
+        loading: true,
+        error: null,
+    });
+
+    const loadDetail = useCallback(async () => {
+        setState((prev) => ({ ...prev, loading: true, error: null }));
+        try {
+            const examsResponse = await getExamsByClinicalHistoryId(id);
+            setState({
+                exams: examsResponse.data ?? [],
+                loading: false,
+                error: null,
+            });
+        } catch (err) {
+            const message =
+                err instanceof Error ? err.message : "No se pudieron cargar los exámenes.";
+            setState({ exams: [], loading: false, error: message });
+        }
+    }, [id]);
+
+    useEffect(() => {
+        loadDetail();
+    }, [loadDetail]);
+
+    return { ...state, reload: loadDetail };
 };

@@ -3,72 +3,15 @@
 import React from "react";
 import { useClinicHistories } from "./useClinicHistories";
 import ClinicHistoryCard from "./ClinicHistoryCard";
-import ExamDetail from "./ExamDetail";
 import { StateCard, PaginationControls } from "./UIStates";
-import { getWorkerFromExams } from "./utils";
 
-const ReadHCContainer = () => {
-    const {
-        histories,
-        loading,
-        error,
-        currentPage,
-        totalPages,
-        selectedHistory,
-        detailLoading,
-        detailError,
-        openHistoryDetail,
-        closeHistoryDetail,
-        goToPage,
-    } = useClinicHistories();
+const ReadHCContainer: React.FC = () => {
+    const { histories, loading, error, currentPage, totalPages, goToPage } = useClinicHistories();
 
-    const workerInDetail = selectedHistory ? getWorkerFromExams(selectedHistory.exams) : null;
-
-    // Vista de detalle de historia
-    if (selectedHistory) {
-        return (
-            <section className="space-y-6">
-                <div className="flex items-center justify-between flex-wrap gap-3">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900">
-                            Historia clínica #{selectedHistory.id}
-                        </h1>
-                        {workerInDetail && (
-                            <p className="text-sm text-gray-600 mt-1">
-                                Trabajador: <span className="font-semibold">{workerInDetail.name}</span> |
-                                CC: {workerInDetail.CC}
-                            </p>
-                        )}
-                    </div>
-                    <button
-                        type="button"
-                        onClick={closeHistoryDetail}
-                        className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
-                    >
-                        Volver a historias
-                    </button>
-                </div>
-
-                {detailLoading && <StateCard variant="loading" message="Cargando exámenes..." />}
-                {detailError && <StateCard variant="error" message={detailError} />}
-                {!detailLoading && selectedHistory.exams.length === 0 && (
-                    <StateCard variant="empty" message="Esta historia clínica no tiene exámenes registrados." />
-                )}
-
-                <div className="grid gap-4">
-                    {selectedHistory.exams.map((exam) => (
-                        <ExamDetail key={exam.id} exam={exam} />
-                    ))}
-                </div>
-            </section>
-        );
-    }
-
-    // Vista de listado de historias
     return (
-        <section className="space-y-6">
+        <div className="space-y-4 sm:space-y-6 p-6 bg-white rounded-lg shadow-md border border-gray-200">
             <div className="flex items-center justify-between flex-wrap gap-3">
-                <h1 className="text-2xl font-bold text-gray-900">Historias clínicas agrupadas</h1>
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Historias clínicas agrupadas</h1>
             </div>
 
             {loading && <StateCard variant="loading" message="Cargando historias clínicas..." />}
@@ -78,13 +21,9 @@ const ReadHCContainer = () => {
             )}
 
             {histories.length > 0 && (
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                     {histories.map((history) => (
-                        <ClinicHistoryCard
-                            key={history.id}
-                            history={history}
-                            onOpen={openHistoryDetail}
-                        />
+                        <ClinicHistoryCard key={history.id} history={history} />
                     ))}
                 </div>
             )}
@@ -98,7 +37,7 @@ const ReadHCContainer = () => {
                     onNext={() => goToPage(currentPage + 1)}
                 />
             )}
-        </section>
+        </div>
     );
 };
 

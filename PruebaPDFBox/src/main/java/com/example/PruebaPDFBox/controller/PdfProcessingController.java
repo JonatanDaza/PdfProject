@@ -74,7 +74,7 @@ public class PdfProcessingController {
             Files.copy(file.getInputStream(), destinationPath,
                     REPLACE_EXISTING);
 
-            return ResponseEntity.ok("Archivo subido exitosamente en: " + destinationPath);
+            return ResponseEntity.ok("Archivo subido exitosamente");
         } catch (Exception e) {
             throw new RuntimeException("Error al guardar el archivo: " + e.getMessage());
         }

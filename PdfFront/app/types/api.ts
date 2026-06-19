@@ -37,12 +37,12 @@ export interface DataValueDto {
 
 export interface WorkerDto {
   id: number;
-  CC: string;
+  cc: string;
   name: string;
-  Gender: string;
-  Age: string;
-  MaritalStatus: string;
-  EducationalLevel: string;
+  gender: string;
+  age: string;
+  maritalStatus: string;
+  educationalLevel: string;
 }
 
 export interface ExamDto {
@@ -51,7 +51,7 @@ export interface ExamDto {
   examDate: string;
   clinicalHistoryId: number;
   dataValues: DataValueDto[];
-  worker: WorkerDto | null;
+  worker: WorkerDto;
 }
 
 export type ClinicalHistoryDto = BaseEntity & {

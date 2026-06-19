@@ -1,16 +1,13 @@
 package com.example.PruebaPDFBox.utilities.mapper.MapperJsons;
 
-import com.example.PruebaPDFBox.dto.DTOJson.WeightedDecibelsDto;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
-public class WeightedDecibelsMapper extends GenericJsonMapper<WeightedDecibelsDto> {
+public class WeightedDecibelsMapper extends GenericJsonMapper<Map<String, String>> {
 
     private static final List<String> FREQUENCIES = Arrays.asList("250", "500", "1000", "2000", "3000", "4000", "6000", "8000");
 
@@ -18,18 +15,12 @@ public class WeightedDecibelsMapper extends GenericJsonMapper<WeightedDecibelsDt
     public String parseToJson(String rawText) {
         if (isNullOrEmpty(rawText)) return "[]";
 
-        WeightedDecibelsDto dto = parseWeightedDecibels(rawText);
+        List<Map<String, String>> result = parseWeightedDecibels(rawText);
 
-        if (dto != null) {
-            List<WeightedDecibelsDto> result = new ArrayList<>();
-            result.add(dto);
-            return toJson(result);
-        }
-
-        return "[]";
+        return result != null ? toJson(result) : "[]";
     }
 
-    private WeightedDecibelsDto parseWeightedDecibels(String rawText) {
+    private List<Map<String, String>> parseWeightedDecibels(String rawText) {
         String upperText = rawText.toUpperCase();
 
         // Buscar las posiciones de VAOD y VAOI
@@ -53,34 +44,20 @@ public class WeightedDecibelsMapper extends GenericJsonMapper<WeightedDecibelsDt
             return null;
         }
 
-        // Crear el DTO y asignar valores por frecuencia
-        WeightedDecibelsDto dto = new WeightedDecibelsDto();
+        Map<String, String> vaoiMap = new LinkedHashMap<>();
+        Map<String, String> vaodMap = new LinkedHashMap<>();
 
-        dto.setVAOD250(vaodValues.get(0));
-        dto.setVAOI250(vaoiValues.get(0));
+        for (int i = 0; i < FREQUENCIES.size(); i++) {
+            String freq = FREQUENCIES.get(i);
+            vaoiMap.put("VAOI" + freq, vaoiValues.get(i));
+            vaodMap.put("VAOD" + freq, vaodValues.get(i));
+        }
 
-        dto.setVAOD500(vaodValues.get(1));
-        dto.setVAOI500(vaoiValues.get(1));
+        List<Map<String, String>> result = new ArrayList<>();
+        result.add(vaoiMap);
+        result.add(vaodMap);
 
-        dto.setVAOD1000(vaodValues.get(2));
-        dto.setVAOI1000(vaoiValues.get(2));
-
-        dto.setVAOD2000(vaodValues.get(3));
-        dto.setVAOI2000(vaoiValues.get(3));
-
-        dto.setVAOD3000(vaodValues.get(4));
-        dto.setVAOI3000(vaoiValues.get(4));
-
-        dto.setVAOD4000(vaodValues.get(5));
-        dto.setVAOI4000(vaoiValues.get(5));
-
-        dto.setVAOD6000(vaodValues.get(6));
-        dto.setVAOI6000(vaoiValues.get(6));
-
-        dto.setVAOD8000(vaodValues.get(7));
-        dto.setVAOI8000(vaoiValues.get(7));
-
-        return dto;
+        return result;
     }
 
     private List<String> extractNumericValues(String text) {
@@ -89,19 +66,19 @@ public class WeightedDecibelsMapper extends GenericJsonMapper<WeightedDecibelsDt
         }
 
         return Arrays.stream(text.split("\\s+"))
-            .map(String::trim)
-            .filter(s -> !s.isEmpty() && s.matches("\\d+"))
-            .filter(s -> !FREQUENCIES.contains(s)) // Excluir frecuencias
-            .collect(Collectors.toList());
+                .map(String::trim)
+                .filter(s -> !s.isEmpty() && s.matches("\\d+"))
+                .filter(s -> !FREQUENCIES.contains(s)) // Excluir frecuencias
+                .collect(Collectors.toList());
     }
 
     @Override
-    protected WeightedDecibelsDto parseLine(String line) {
+    protected Map<String, String> parseLine(String line) {
         return null;
     }
 
     @Override
-    protected TypeReference<List<WeightedDecibelsDto>> getTypeReference() {
+    protected TypeReference<List<Map<String, String>>> getTypeReference() {
         return new TypeReference<>() {};
     }
 }

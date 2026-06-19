@@ -11,7 +11,7 @@ export const extractHC = async <T extends BaseEntity = ClinicalHistoryDto>(file:
     const formData = new FormData();
     formData.append('file', file);
     
-    const { data } = await API.api.post<T>('/extract', formData, {
+    const { data } = await API.api.post<T>('/HC/extract', formData, {
         headers: {
             'Content-Type': 'multipart/form-data',
         }
@@ -23,7 +23,7 @@ export const getAllHC = async <T extends BaseEntity = ClinicalHistoryDto>(
     page: number = 0,
     size: number = 10
 ): Promise<PaginationResponse<T>> => {
-    const { data } = await API.api.post<PaginationResponse<T>>('/all', {
+    const { data } = await API.api.post<PaginationResponse<T>>('/HC/all', {
         page,
         size
     }, {
@@ -38,7 +38,7 @@ export const uploadHC = async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append('file', file);
     
-    const { data } = await API.api.post<string>('/upload', formData, {
+    const { data } = await API.api.post<string>('/HC/upload', formData, {
         headers: {
             'Content-Type': 'multipart/form-data',
         }
@@ -49,6 +49,6 @@ export const uploadHC = async (file: File): Promise<string> => {
 export const getExamsByClinicalHistoryId = async (
     clinicalHistoryId: number
 ): Promise<ListResponse<ExamDto>> => {
-    const { data } = await API.api.get<ListResponse<ExamDto>>(`/${clinicalHistoryId}/exams`);
+    const { data } = await API.api.get<ListResponse<ExamDto>>(`/HC/${clinicalHistoryId}/exams`);
     return data;
 }
