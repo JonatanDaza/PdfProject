@@ -17,10 +17,9 @@ const ClinicHistoryCard: React.FC<ClinicHistoryCardProps> = ({ history }) => {
 
     return (
         <div className="w-full max-w-full h-full flex flex-col rounded-2xl border border-gray-200 bg-gray-100 p-3 sm:p-5 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
-            <div className="flex-1 space-y-3">
+            <div className="flex-1">
                 <div className="min-w-0">
-                    <p className="text-xs uppercase tracking-wide text-gray-500">Historia clínica</p>
-                    <h2 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">{history.id}</h2>
+                    <p className="text-lg sm:text-xl font-semibold text-gray-900 truncate">Historia clínica {history.id}</p>
                 </div>
 
                 <div className="rounded-lg p-2 sm:p-3 text-xs sm:text-sm text-gray-700 space-y-1 min-w-0">

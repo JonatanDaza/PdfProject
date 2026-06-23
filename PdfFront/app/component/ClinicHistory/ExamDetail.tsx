@@ -2,7 +2,7 @@
 
 import React from "react";
 import { ExamDto } from "@/types/api";
-import { formatDataValue } from "./utils";
+import JsonValueRenderer from "./JsonValueRenderer";
 
 interface ExamDetailProps {
     exam: ExamDto;
@@ -10,42 +10,82 @@ interface ExamDetailProps {
 
 const ExamDetail: React.FC<ExamDetailProps> = ({ exam }) => {
     return (
-        <div className="w-[100%] rounded-2xl border border-gray-200 bg-white p-3 sm:p-5 shadow-sm">
-            <div className="mb-3 sm:mb-4">
-                <h2 className="text-base sm:text-lg font-semibold text-gray-900">{exam.examName}</h2>
-                <p className="text-xs sm:text-sm text-gray-500">Fecha: {exam.examDate || "Sin fecha"}</p>
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            {/* Header */}
+            <div className="border-b border-gray-200 px-4 py-4 sm:px-6">
+                <h2 className="break-words text-lg font-semibold text-gray-900">
+                    {exam.examName}
+                </h2>
+
+                <p className="mt-1 text-sm text-gray-600">
+                    Fecha: {exam.examDate || "Sin fecha"}
+                </p>
             </div>
 
-            {exam.dataValues?.length ? (
-                <div className="overflow-x-auto -mx-3 sm:-mx-5 px-3 sm:px-5">
-                    <table className="w-full text-xs sm:text-sm">
-                        {/* <thead>
-                            <tr className="border-b border-gray-200 text-left text-gray-600">
-                                <th className="py-2 pr-4 font-semibold">dataType</th>
-                                <th className="py-2 font-semibold">dataValue</th>
-                            </tr>
-                        </thead> */}
-                        <tbody>
-                            {exam.dataValues.map((item) => (
-                                <tr key={item.id} className="border-b border-gray-100 align-top">
-                                    <td className="py-2 pr-2 sm:pr-4 font-medium text-gray-800 whitespace-normal sm:whitespace-nowrap text-xs sm:text-sm">
+            {/* Content */}
+            <div className="p-4 sm:p-6">
+                {exam.dataValues?.length ? (
+                    <div className="flex flex-wrap gap-4">
+                        {exam.dataValues.map((item) => {
+                            const fieldName =
+                                item.dataType?.name?.toLowerCase() || "";
+
+                            const isObservation =
+                                fieldName.includes("observ");
+
+                            const isRequirementList =
+                                fieldName.includes("requisito");
+
+                            const isRequirementConduct =
+                                fieldName.includes("conduct");
+
+                            const isAudiometry =
+                                fieldName.includes("audiometr");
+
+                            const isRecomendation =
+                                fieldName.includes("recomend");
+
+                            const isLargeField =
+                                isObservation || isAudiometry || isRequirementList || isRequirementConduct;
+
+                            const isMediumField =
+                                !isLargeField &&
+                                (fieldName.includes("resultado") || fieldName.includes("comentario"));
+
+                            return (
+                                <div
+                                    key={item.id}
+                                    className={
+                                        isLargeField
+                                            ? "w-full"
+                                            : isMediumField
+                                            ? "w-full lg:basis-[48%] lg:flex-1"
+                                            : "w-full sm:basis-[48%] xl:basis-[31%] flex-1"
+                                    }
+                                >
+                                    <label className="mb-1 block break-words text-xs font-medium uppercase tracking-wide text-gray-500">
                                         {item.dataType?.name ?? "Sin tipo"}
-                                    </td>
-                                    <td className="py-2 text-gray-700">
-                                        <pre className="whitespace-pre-wrap break-words font-sans text-xs sm:text-sm m-0">
-                                            {formatDataValue(item.value)}
-                                        </pre>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            ) : (
-                <div className="rounded-lg bg-gray-50 p-3 text-xs sm:text-sm text-gray-600">
-                    Este examen no tiene valores (`dataValue`) registrados.
-                </div>
-            )}
+                                    </label>
+
+                                    <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                                        <div className="overflow-x-auto">
+                                            <div className="break-words whitespace-pre-wrap text-sm text-gray-800">
+                                                <JsonValueRenderer
+                                                    value={String(item.value)}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    <div className="rounded-lg bg-gray-50 p-4 text-sm text-gray-600">
+                        Este examen no tiene valores registrados.
+                    </div>
+                )}
+            </div>
         </div>
     );
 };
