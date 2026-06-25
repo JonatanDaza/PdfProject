@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { authService } from "@/services/auth/authService";
-import type { RoleDto } from "@/types";
+import type { RoleDto } from "@/types/api";
 import { toast } from "sonner";
 import Modal from "../UI/Modal";
 
