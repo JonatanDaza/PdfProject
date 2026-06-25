@@ -1,46 +1,26 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import useAuth from "@/hooks/useAuth";
 import Link from "next/link";
-import { 
-    MdDashboard, 
-    MdCloudUpload, 
-    MdHistory, 
-    MdLogout
-} from "react-icons/md";
-
-interface MenuItem {
-    href: string;
-    label: string;
-    icon: React.ReactNode;
-}
+import { MdLogout } from "react-icons/md";
+import MENU_CONFIG from "./routes";
 
 interface SidebarProps {
     onCollapsedChange?: (collapsed: boolean) => void;
 }
-
-const MENU_CONFIG: Record<string, MenuItem[]> = {
-    admin: [
-        { href: "/dashboard", label: "Dashboard", icon: <MdDashboard size={24} /> },
-        { href: "/dashboard/uploadHC", label: "Subir HC", icon: <MdCloudUpload size={24} /> },
-        { href: "/dashboard/readHC", label: "Historias", icon: <MdHistory size={24} /> },
-    ],
-    user: [
-        { href: "/dashboard", label: "Dashboard", icon: <MdDashboard size={24} /> },
-        { href: "/dashboard/uploadHC", label: "Subir HC", icon: <MdCloudUpload size={24} /> },
-        { href: "/dashboard/readHC", label: "Historias", icon: <MdHistory size={24} /> },
-    ],
-};
 
 const Sidebar: React.FC<SidebarProps> = ({ onCollapsedChange }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const pathname = usePathname();
     const { logout, hasRole } = useAuth();
 
-    const role = hasRole("admin") ? "admin" : "user";
-    const menuItems = useMemo(() => MENU_CONFIG[role], [role]);
+   const menuItems = useMemo(() => {
+        return MENU_CONFIG.filter((item) =>
+            item.allowedRoles.some((role) => hasRole(role))
+        );
+    }, [hasRole]);
 
     const handleLogout = async () => {
         await logout();

@@ -1,4 +1,4 @@
-package com.example.PruebaPDFBox.config.Security;
+package com.example.PruebaPDFBox.utilities.config.Security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

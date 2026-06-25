@@ -104,8 +104,8 @@ export const registerValidations: FieldValidations = {
       message: "La contraseña es obligatoria",
     },
     {
-      validate: (v) => v.length >= 6,
-      message: "La contraseña debe tener al menos 6 caracteres",
+      validate: (v) => v.length >= 8,
+      message: "La contraseña debe tener al menos 8 caracteres",
     },
   ],
 };

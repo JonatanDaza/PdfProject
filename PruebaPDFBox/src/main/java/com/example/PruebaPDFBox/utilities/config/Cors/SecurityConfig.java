@@ -1,9 +1,12 @@
-package com.example.PruebaPDFBox.config.Cors;
+package com.example.PruebaPDFBox.utilities.config.Cors;
 
-import com.example.PruebaPDFBox.config.Security.JwtFilter;
+import java.util.Arrays;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -13,11 +16,12 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import java.util.Arrays;
-import java.util.List;
+
+import com.example.PruebaPDFBox.utilities.config.Security.JwtFilter;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Autowired
@@ -39,7 +43,16 @@ public class SecurityConfig {
                         // Rutas que requieren autenticación
                         .requestMatchers("/api/auth/logout").authenticated()
                         .requestMatchers("/api/auth/users/**").authenticated()
+
+                        // Rutas que requieren autenticación
+                        .requestMatchers("/api/auth/logout").authenticated()
+                        .requestMatchers("/api/auth/users/**").authenticated()
                         .requestMatchers("/api/HC/**").authenticated()
+
+                        // Rutas que requieren rol ADMIN
+                        .requestMatchers("/api/auth/admin/register").authenticated()
+                        .requestMatchers("/api/auth/{userId}/password").authenticated()
+                        .requestMatchers("/api/auth/users/**").authenticated()
 
                         // Cualquier otra ruta requiere autenticación
                         .anyRequest().authenticated()

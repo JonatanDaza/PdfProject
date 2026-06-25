@@ -5,9 +5,9 @@ import { MdShield } from "react-icons/md";
 import Image from "next/image";
 
 
-const HomePage = () => {
+const DashboardPage: React.FC = () => {
     return (
-      <div className="min-h-screen space-y-12 animate-in fade-in duration-700">
+      <div className="min-h-screen space-y-12 pb-20 animate-in fade-in duration-700">
         
         {/* Hero Section */}
         <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden relative">
@@ -45,9 +45,8 @@ const HomePage = () => {
           <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-full -mr-32 -mt-32 blur-3xl opacity-50" />
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-50 rounded-full -ml-32 -mb-32 blur-3xl opacity-50" />
         </div>
-        
       </div>
     );
 }
 
-export default HomePage;
+export default DashboardPage;

@@ -1,6 +1,6 @@
 package com.example.PruebaPDFBox.business.Auth;
 
-import com.example.PruebaPDFBox.config.Security.JwtUtil;
+import com.example.PruebaPDFBox.utilities.config.Security.JwtUtil;
 import com.example.PruebaPDFBox.dto.*;
 import com.example.PruebaPDFBox.dto.DTOAuth.AuthResponseDto;
 import com.example.PruebaPDFBox.dto.DTOAuth.LoginRequestDto;
@@ -53,6 +53,17 @@ public class AuthBusiness {
             throw e;
         } catch (Exception e) {
             throw new CustomException("Error al procesar el login: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public void changePassword(Long userId, String newPassword) {
+        try {
+            authService.changePassword(userId, newPassword);
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CustomException("Error al procesar el cambio de contraseña: " + e.getMessage(),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -151,6 +162,29 @@ public class AuthBusiness {
         } catch (Exception e) {
             throw new CustomException("Error al obtener usuarios activos: " + e.getMessage(),
                     HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public UsersDto changeRole(Long userId, Long newRoleId) {
+        try {
+            Users user = authService.changeRole(userId, newRoleId);
+            return UsersMap.INSTANCE.EntityToDTO(user);
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CustomException("Error al cambiar rol: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public List<RoleDto> getAllRoles() {
+        try {
+            return authService.getAllRoles().stream()
+                    .map(role -> new RoleDto(role.getId(), role.getName()))
+                    .collect(Collectors.toList());
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CustomException("Error al obtener roles: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

@@ -1,4 +1,4 @@
-package com.example.PruebaPDFBox.config.Security;
+package com.example.PruebaPDFBox.utilities.config.Security;
 
 import com.example.PruebaPDFBox.model.Role;
 import com.example.PruebaPDFBox.model.Users;

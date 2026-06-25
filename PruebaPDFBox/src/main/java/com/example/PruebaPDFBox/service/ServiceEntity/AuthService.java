@@ -1,5 +1,11 @@
 package com.example.PruebaPDFBox.service.ServiceEntity;
 
+import com.example.PruebaPDFBox.utilities.Infrastructure.exception.CustomException;
+import com.example.PruebaPDFBox.utilities.Infrastructure.exception.InvalidCredentialsException;
+import com.example.PruebaPDFBox.utilities.Infrastructure.exception.RoleNotFoundException;
+import com.example.PruebaPDFBox.utilities.Infrastructure.exception.UserAlreadyExistsException;
+import com.example.PruebaPDFBox.utilities.Infrastructure.exception.UserInactiveException;
+import com.example.PruebaPDFBox.utilities.Infrastructure.exception.UserNotFoundException;
 import com.example.PruebaPDFBox.dto.DTOAuth.LoginRequestDto;
 import com.example.PruebaPDFBox.dto.DTOAuth.RegisterRequestDto;
 import com.example.PruebaPDFBox.dto.DTOAuth.RoleAssignmentDto;
@@ -105,6 +111,26 @@ public class AuthService {
                     HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (Exception e) {
             throw new CustomException("Error inesperado al procesar login: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Transactional
+    public void changePassword(Long userId, String newPassword) {
+        try {
+            Users user = usersRepository.findById(userId)
+                    .orElseThrow(() -> new UserNotFoundException("Usuario con id " + userId + " no encontrado"));
+
+            user.setPassword(passwordEncoder.encode(newPassword));
+            usersRepository.save(user);
+
+        } catch (UserNotFoundException e) {
+            throw new CustomException(e.getMessage(), HttpStatus.NOT_FOUND);
+        } catch (DataAccessException e) {
+            throw new CustomException("Error en la base de datos al cambiar la contraseña: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (Exception e) {
+            throw new CustomException("Error inesperado al cambiar la contraseña: " + e.getMessage(),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -277,6 +303,38 @@ public class AuthService {
         } catch (Exception e) {
             throw new CustomException("Error inesperado al obtener usuarios activos: " + e.getMessage(),
                     HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Transactional
+    public Users changeRole(Long userId, Long newRoleId) {
+        try {
+            Users user = usersRepository.findById(userId)
+                    .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado con ID: " + userId));
+
+            Role newRole = roleRepository.findById(newRoleId)
+                    .orElseThrow(() -> new RoleNotFoundException("Rol no encontrado con ID: " + newRoleId));
+
+            user.getRoles().clear();
+            user.getRoles().add(newRole);
+            return usersRepository.save(user);
+
+        } catch (UserNotFoundException | RoleNotFoundException e) {
+            throw new CustomException(e.getMessage(), HttpStatus.NOT_FOUND);
+        } catch (DataAccessException e) {
+            throw new CustomException("Error en la base de datos al cambiar rol: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (Exception e) {
+            throw new CustomException("Error inesperado al cambiar rol: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public List<Role> getAllRoles() {
+        try {
+            return roleRepository.findAll();
+        } catch (DataAccessException e) {
+            throw new CustomException("Error en la base de datos al obtener roles: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (Exception e) {
+            throw new CustomException("Error inesperado al obtener roles: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

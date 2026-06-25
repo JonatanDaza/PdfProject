@@ -1,4 +1,3 @@
-import { Toaster } from "sonner";
 import LayoutContent from "./layoutComponent";
 
 
@@ -10,7 +9,6 @@ const RootLayout = ({ children }: RootLayoutProps) => {
     return (
         <>
             <LayoutContent>
-              <Toaster position="top-right" richColors />
                 {children}
             </LayoutContent>
         </>

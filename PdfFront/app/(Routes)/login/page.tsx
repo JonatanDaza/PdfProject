@@ -48,8 +48,9 @@ const LoginPage = () => {
           token: response.data.token
         }));
         
-        // Redirigir según rol
-        router.push("/dashboard");
+        // Redirigir según rol usando el servicio
+        const redirectUrl = authService.getRedirectUrl();
+        router.push(redirectUrl);
       }
     } catch (err: any) {
       setError(err.message || "Error al iniciar sesión");
@@ -110,6 +111,13 @@ const LoginPage = () => {
             className="text-blue-600 hover:text-blue-900 font-semibold"
           >
             Regístrate aquí
+          </a>
+          <br />
+          <a
+            href="/forgot-password"
+            className="text-blue-600 hover:text-blue-900 font-semibold"
+          >
+            ¿Olvidaste tu contraseña?
           </a>
         </>
       }

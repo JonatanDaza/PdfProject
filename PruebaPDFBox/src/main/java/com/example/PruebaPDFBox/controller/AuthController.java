@@ -1,10 +1,8 @@
 package com.example.PruebaPDFBox.controller;
 
 import com.example.PruebaPDFBox.business.Auth.AuthBusiness;
-import com.example.PruebaPDFBox.dto.DTOAuth.AuthResponseDto;
-import com.example.PruebaPDFBox.dto.DTOAuth.LoginRequestDto;
-import com.example.PruebaPDFBox.dto.DTOAuth.RegisterRequestDto;
-import com.example.PruebaPDFBox.dto.DTOAuth.RoleAssignmentDto;
+import com.example.PruebaPDFBox.dto.RoleDto;
+import com.example.PruebaPDFBox.dto.DTOAuth.*;
 import com.example.PruebaPDFBox.dto.UsersDto;
 import com.example.PruebaPDFBox.utilities.Infrastructure.exception.CustomException;
 import com.example.PruebaPDFBox.utilities.Infrastructure.http.ResponseHttpApi;
@@ -17,22 +15,61 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
     private final AuthBusiness authBusiness;
-
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequestDto request) {
+        try {
+            request.setRoles(null);
+            AuthResponseDto response = authBusiness.register(request);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ResponseHttpApi.responseHttpFindId(
+                            response, ResponseHttpApi.CODE_OK, "Usuario registrado exitosamente"));
+        } catch (CustomException e) {
+            return ResponseEntity.status(e.getStatus())
+                    .body(ResponseHttpApi.responseHttpError(e.getMessage(), e.getStatus()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ResponseHttpApi.responseHttpError("Error interno del servidor", HttpStatus.INTERNAL_SERVER_ERROR));
+        }
+    }
+
+    // Registro administrativo: solo ADMIN, puede elegir cualquier rol.
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @PostMapping("/admin/register")
+    public ResponseEntity<?> adminRegister(@Valid @RequestBody RegisterRequestDto request) {
         try {
             AuthResponseDto response = authBusiness.register(request);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(ResponseHttpApi.responseHttpFindId(
+                            response, ResponseHttpApi.CODE_OK, "Usuario registrado exitosamente"));
+        } catch (CustomException e) {
+            return ResponseEntity.status(e.getStatus())
+                    .body(ResponseHttpApi.responseHttpError(e.getMessage(), e.getStatus()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ResponseHttpApi.responseHttpError(
+                        "Error interno del servidor", 
+                        HttpStatus.INTERNAL_SERVER_ERROR
+                ));
+        }
+    }
+
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDto request) {
+        try {
+            AuthResponseDto response = authBusiness.login(request);
+            return ResponseEntity.ok()
+                    .body(ResponseHttpApi.responseHttpFindId(
                             response,
                             ResponseHttpApi.CODE_OK,
-                            "Usuario registrado exitosamente"
+                            "Login exitoso"
                     ));
         } catch (CustomException e) {
             return ResponseEntity.status(e.getStatus())
@@ -46,15 +83,18 @@ public class AuthController {
         }
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDto request) {
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @PutMapping("/{userId}/password")
+    public ResponseEntity<?> changePassword(
+            @PathVariable Long userId,
+            @Valid @RequestBody ChangePasswordRequestDto request) {
         try {
-            AuthResponseDto response = authBusiness.login(request);
-            return ResponseEntity.ok()
-                    .body(ResponseHttpApi.responseHttpFindId(
-                            response,
+            authBusiness.changePassword(userId, request.getNewPassword());
+            return ResponseEntity.ok(
+                    ResponseHttpApi.responseHttpFindId(
+                            null,
                             ResponseHttpApi.CODE_OK,
-                            "Login exitoso"
+                            "Contraseña actualizada exitosamente"
                     ));
         } catch (CustomException e) {
             return ResponseEntity.status(e.getStatus())
@@ -105,7 +145,7 @@ public class AuthController {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PutMapping("/users/{userId}/activate")
     public ResponseEntity<?> activateUser(@PathVariable Long userId) {
         try {
@@ -128,7 +168,7 @@ public class AuthController {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PutMapping("/users/{userId}/deactivate")
     public ResponseEntity<?> deactivateUser(@PathVariable Long userId) {
         try {
@@ -151,7 +191,7 @@ public class AuthController {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping("/users/roles/add")
     public ResponseEntity<?> addRole(@Valid @RequestBody RoleAssignmentDto request) {
         try {
@@ -174,7 +214,7 @@ public class AuthController {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping("/users/roles/remove")
     public ResponseEntity<?> removeRole(@Valid @RequestBody RoleAssignmentDto request) {
         try {
@@ -197,7 +237,7 @@ public class AuthController {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping("/users/{userId}")
     public ResponseEntity<?> getUserById(@PathVariable Long userId) {
         try {
@@ -220,7 +260,7 @@ public class AuthController {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping("/users")
     public ResponseEntity<?> getAllUsers() {
         try {
@@ -244,7 +284,7 @@ public class AuthController {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping("/users/active")
     public ResponseEntity<?> getActiveUsers() {
         try {
@@ -265,6 +305,47 @@ public class AuthController {
                             "Error interno del servidor",
                             HttpStatus.INTERNAL_SERVER_ERROR
                     ));
+        }
+    }
+
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @PutMapping("/users/{userId}/role/{newRoleId}")
+    public ResponseEntity<?> changeRole(@PathVariable Long userId, @PathVariable Long newRoleId) {
+        try {
+            UsersDto response = authBusiness.changeRole(userId, newRoleId);
+            return ResponseEntity.ok()
+                    .body(ResponseHttpApi.responseHttpAction(
+                            response.getId(),
+                            ResponseHttpApi.CODE_OK,
+                            "Rol actualizado exitosamente"
+                    ));
+        } catch (CustomException e) {
+            return ResponseEntity.status(e.getStatus())
+                    .body(ResponseHttpApi.responseHttpError(e.getMessage(), e.getStatus()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ResponseHttpApi.responseHttpError("Error interno del servidor", HttpStatus.INTERNAL_SERVER_ERROR));
+        }
+    }
+
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @GetMapping("/roles")
+    public ResponseEntity<?> getAllRoles() {
+        try {
+            List<RoleDto> response = authBusiness.getAllRoles();
+            return ResponseEntity.ok()
+                    .body(ResponseHttpApi.responseHttpFindAllList(
+                            response,
+                            ResponseHttpApi.CODE_OK,
+                            "Roles obtenidos exitosamente",
+                            response.size()
+                    ));
+        } catch (CustomException e) {
+            return ResponseEntity.status(e.getStatus())
+                    .body(ResponseHttpApi.responseHttpError(e.getMessage(), e.getStatus()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ResponseHttpApi.responseHttpError("Error interno del servidor", HttpStatus.INTERNAL_SERVER_ERROR));
         }
     }
 }

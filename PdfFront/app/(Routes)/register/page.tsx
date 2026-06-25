@@ -1,7 +1,6 @@
 "use client";
 
 import { authService } from "@/services/auth/authService";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   isFormValid,
@@ -12,16 +11,17 @@ import {
   strengthConfig
 } from "@/component/auth/Formvalidation";
 import Form from "@/component/UI/Form";
+import ProtectedRoute from "@/component/auth/ProtectedRoute";
 
-const RegisterPage = () => {
+const CreateUserPage = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
-  const router = useRouter();
 
   const handleBlur = (field: string) =>
     setTouched((prev) => ({ ...prev, [field]: true }));
@@ -33,40 +33,49 @@ const RegisterPage = () => {
 
   const strength = getPasswordStrength(password);
   const { label: strengthLabel, color: strengthColor, bars } = strengthConfig[strength];
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (isLoading) return;
-    
+
     setError("");
+    setSuccessMessage("");
     setIsLoading(true);
 
     try {
       const response = await authService.register(name, email, password);
-      
+
       if (response?.data) {
-        
-        // Clear any existing error messages
-        setError("");
-        router.push("/login");
+        setSuccessMessage(`Usuario "${name}" creado exitosamente.`);
+        // Reset form
+        setName("");
+        setEmail("");
+        setPassword("");
+        setTouched({});
       }
     } catch (err: any) {
-      setError(err.message || "Error al registrarse");
+      setError(err.message || "Error al crear el usuario");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
+    <div className="bg-gray-50 items-center justify-center">
+      {successMessage && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-green-100 border border-green-400 text-green-800 px-6 py-3 rounded-lg shadow-md text-sm">
+          {successMessage}
+        </div>
+      )}
     <Form
       title={null}
       img="/img/logo-zona-medica-header.png"
-      subtitle={"Crea tu cuenta"}
+      subtitle={"Crear nuevo usuario"}
       onSubmit={handleSubmit}
-      submitLabel="Registrarse"
+      submitLabel="Crear usuario"
       isLoading={isLoading}
-      loadingLabel="Creando cuenta..."
+      loadingLabel="Creando usuario..."
       error={error}
       canSubmit={canSubmit}
       fields={[
@@ -74,7 +83,7 @@ const RegisterPage = () => {
           id: "name",
           label: "Nombre completo",
           type: "text",
-          placeholder: "Tu nombre",
+          placeholder: "Nombre del usuario",
           required: true,
           value: name,
           onChange: setName,
@@ -85,7 +94,7 @@ const RegisterPage = () => {
           id: "email",
           label: "Correo electrónico",
           type: "email",
-          placeholder: "tu@zonamedicaips.com",
+          placeholder: "correo@zonamedicaips.com",
           required: true,
           value: email,
           onChange: setEmail,
@@ -96,7 +105,7 @@ const RegisterPage = () => {
           id: "password",
           label: "Contraseña",
           type: showPassword ? "text" : "password",
-          placeholder: "Crea una contraseña",
+          placeholder: "Asigna una contraseña",
           required: true,
           value: password,
           onChange: setPassword,
@@ -111,11 +120,8 @@ const RegisterPage = () => {
               👁️
             </button>
           ),
-          // Indicador de fortaleza + sugerencias debajo del input
           hint: password.length > 0 ? (
             <div className="mt-2 space-y-2">
-
-              {/* Barras de fortaleza */}
               <div className="flex items-center gap-2">
                 <div className="flex gap-1 flex-1">
                   {[1, 2, 3, 4].map((bar) => (
@@ -133,8 +139,6 @@ const RegisterPage = () => {
                   </span>
                 )}
               </div>
-
-              {/* Checklist de sugerencias */}
               <ul className="space-y-1">
                 {passwordHints.map((hint) => {
                   const met = hint.met(password);
@@ -157,17 +161,17 @@ const RegisterPage = () => {
       ]}
       footer={
         <>
-          <span className="text-gray-400">¿Ya tienes una cuenta?</span>{" "}
+          <span className="text-gray-400">¿Tienes una cuenta?</span>{" "}
           <a
             href="/login"
             className="text-blue-600 hover:text-blue-900 font-semibold"
           >
-            Inicia sesión aquí
+            Iniciar sesión
           </a>
         </>
-      }
-    />
+      }    />
+    </div>
   );
 };
 
-export default RegisterPage;
+export default CreateUserPage;

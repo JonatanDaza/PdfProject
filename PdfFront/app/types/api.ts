@@ -58,3 +58,16 @@ export type ClinicalHistoryDto = BaseEntity & {
   id: number;
   exams: ExamDto[];
 };
+
+export interface RoleDto {
+  id: number;
+  name: string;
+}
+
+export interface UsersDto {
+  id: number;
+  name: string;
+  email: string;
+  roles: RoleDto[];
+  active: boolean;
+}
