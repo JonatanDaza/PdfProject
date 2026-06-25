@@ -22,15 +22,15 @@ public class PdfOcrSectionDetector {  // Nombre diferente para evitar confusión
             "GLYCEMYA_IMAGE_LABEL", new HashSet<>(List.of(
                     "HEMATOLOGIA GLICEMIA ANALITO "
             ))
-//            ,
-//            "HEMOGRAM_IMAGE_LABEL", new HashSet<>(List.of(
-//                    "CUADRO HEMATICO (HEMOGRAM A)"
-////                    "CUADRO HEMATICO (HEMOGRAMA)"
-//            ))
-//            ,
-//            "LIPID_PROFILE_IMAGE_LABEL", new HashSet<>(List.of(
-//                    "HEMATOLOGIA PERFIL LIPIDICO"
-//            ))
+            ,
+            "HEMOGRAM_IMAGE_LABEL", new HashSet<>(List.of(
+                    "CUADRO HEMATICO (HEMOGRAM A)"
+//                    "CUADRO HEMATICO (HEMOGRAMA)"
+            ))
+            ,
+            "LIPID_PROFILE_IMAGE_LABEL", new HashSet<>(List.of(
+                    "HEMATOLOGIA PERFIL LIPIDICO"
+            ))
     );
 
     public static final Set<String> ALL_IMAGE_TITLES = IMAGE_SECTION_TITLES.values()

@@ -49,11 +49,13 @@ public class ImageTextExtractor {
             Tesseract tesseract = getTesseract();
             auxiliar.configureTesseract(tesseract);
 
-            // Usar PSM 6 para bloque de texto
             tesseract.setPageSegMode(6);
             String text = tesseract.doOCR(optimizedImage);
 
-            return text.replaceAll("\\r?\\n+", " ").trim();
+            // Preserva saltos de línea — solo normaliza múltiples líneas vacías
+            return text.replaceAll("\\r\\n", "\n")
+                    .replaceAll("\\n{3,}", "\n\n")
+                    .trim();
 
 //            if (!auxiliar.isValidTableImage(image)) {
 //                return "";
