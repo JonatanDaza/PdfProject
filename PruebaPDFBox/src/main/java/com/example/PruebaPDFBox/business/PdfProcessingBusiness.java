@@ -99,6 +99,14 @@ public class PdfProcessingBusiness {
                                 audiometryTextBusiness.process(context, sectionArea, worker, sectionArea.examName());
                         case "OPTOMETRY_LABEL" ->
                                 optometryTextBusiness.process(context, sectionArea, worker, sectionArea.examName());
+                        // case "SPIROMETRY_LABEL" ->
+                        //         throw new UnsupportedOperationException("SPIROMETRY_LABEL aún no implementado");
+                        // case "GLYCEMIA_LABEL" ->
+                        //         throw new UnsupportedOperationException("GLYCEMIA_LABEL aún no implementado");
+                        // case "HEMOGRAM_LABEL" ->
+                        //         throw new UnsupportedOperationException("HEMOGRAM_LABEL aún no implementado");
+                        // case "LIPID_PROFILE_LABEL" ->
+                        //         throw new UnsupportedOperationException("LIPID_PROFILE_LABEL aún no implementado");
                         default -> false;
                     };
 

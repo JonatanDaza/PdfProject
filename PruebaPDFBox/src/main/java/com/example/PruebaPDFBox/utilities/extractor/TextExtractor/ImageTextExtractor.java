@@ -44,10 +44,26 @@ public class ImageTextExtractor {
             if (!auxiliar.isValidTableImage(image)) {
                 return "";
             }
-
+            
             BufferedImage optimizedImage = auxiliar.optimizeImageForOCR(image, MIN_IMAGE_WIDTH);
             Tesseract tesseract = getTesseract();
             auxiliar.configureTesseract(tesseract);
+            
+            //            // Probar con diferentes PSM modes para mejor detección de títulos
+            //            int[] titlePsmModes = {6, 3, 1}; // PSM 6: bloque uniforme, 3: línea, 1: texto automático
+            //
+            //            for (int psm : titlePsmModes) {
+            //                tesseract.setPageSegMode(psm);
+            //                String text = tesseract.doOCR(optimizedImage);
+            //
+            //                if (!auxiliar.isBlank(text)) {
+            //                    // Limpiar el texto para mejor coincidencia
+            //                    text = text.replaceAll("\\r?\\n+", " ").trim();
+            //                    return text;
+            //                }
+            //            }
+            //
+            //            return "";
 
             tesseract.setPageSegMode(6);
             String text = tesseract.doOCR(optimizedImage);
@@ -57,29 +73,6 @@ public class ImageTextExtractor {
                     .replaceAll("\\n{3,}", "\n\n")
                     .trim();
 
-//            if (!auxiliar.isValidTableImage(image)) {
-//                return "";
-//            }
-//
-//            BufferedImage optimizedImage = auxiliar.optimizeImageForOCR(image, MIN_IMAGE_WIDTH);
-//            Tesseract tesseract = getTesseract();
-//            auxiliar.configureTesseract(tesseract);
-//
-//            // Probar con diferentes PSM modes para mejor detección de títulos
-//            int[] titlePsmModes = {6, 3, 1}; // PSM 6: bloque uniforme, 3: línea, 1: texto automático
-//
-//            for (int psm : titlePsmModes) {
-//                tesseract.setPageSegMode(psm);
-//                String text = tesseract.doOCR(optimizedImage);
-//
-//                if (!auxiliar.isBlank(text)) {
-//                    // Limpiar el texto para mejor coincidencia
-//                    text = text.replaceAll("\\r?\\n+", " ").trim();
-//                    return text;
-//                }
-//            }
-//
-//            return "";
         } catch (Exception e) {
             System.err.println("Error en OCR simple: " + e.getMessage());
             return "";

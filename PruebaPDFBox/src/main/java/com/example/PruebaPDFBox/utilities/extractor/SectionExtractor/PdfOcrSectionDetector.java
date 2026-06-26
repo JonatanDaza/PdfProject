@@ -1,7 +1,6 @@
 package com.example.PruebaPDFBox.utilities.extractor.SectionExtractor;
 
 import com.example.PruebaPDFBox.record.SectionArea;
-import com.example.PruebaPDFBox.utilities.extractor.Auxiliaries.PdfImgSectionExtractorAuxiliary;
 import com.example.PruebaPDFBox.utilities.extractor.TextExtractor.ImageTextExtractor;
 import lombok.RequiredArgsConstructor;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -13,9 +12,9 @@ import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
-public class PdfOcrSectionDetector {  // Nombre diferente para evitar confusión
+public class PdfOcrSectionDetector {
 
-    private final PdfImgSectionExtractor pdfImgSectionExtractor;  // Tu extractor actual
+    private final PdfImgSectionExtractor pdfImgSectionExtractor;
     private final ImageTextExtractor imageTextExtractor;
 
     public static final Map<String, Set<String>> IMAGE_SECTION_TITLES = Map.of(
@@ -24,8 +23,8 @@ public class PdfOcrSectionDetector {  // Nombre diferente para evitar confusión
             ))
             ,
             "HEMOGRAM_IMAGE_LABEL", new HashSet<>(List.of(
-                    "CUADRO HEMATICO (HEMOGRAM A)"
-//                    "CUADRO HEMATICO (HEMOGRAMA)"
+                    "CUADRO HEMATICO (HEMOGRAM A)",
+                    "CUADRO HEMATICO (HEMOGRAMA)"
             ))
             ,
             "LIPID_PROFILE_IMAGE_LABEL", new HashSet<>(List.of(
