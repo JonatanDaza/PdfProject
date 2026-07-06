@@ -15,15 +15,15 @@ public class OCRConfig {
 
         t.setDatapath("C:\\Users\\Zonamedica\\AppData\\Local\\Programs\\Tesseract-OCR\\tessdata");
         t.setLanguage("spa+eng");
-
-        t.setPageSegMode(11);
         t.setOcrEngineMode(1);
+        t.setVariable("user_defined_dpi", "300");
+        t.setPageSegMode(6);
 
-        // Simplificar la whitelist
-        t.setVariable("tessedit_char_whitelist",
-                "0123456789.,*ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚÜÑabcdefghijklmnopqrstuvwxyzáéíóúüñ /-:%()");
+        // SIN whitelist — comentada para diagnóstico.
+        // t.setVariable("tessedit_char_whitelist", "...");
+
+        t.setVariable("preserve_interword_spaces", "1");
 
         return t;
     }
 }
-

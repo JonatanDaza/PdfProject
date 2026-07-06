@@ -9,31 +9,26 @@ import java.util.regex.*;
 public class OcrFieldExtractor {
 
     public String extractAfterLabel(String text, String label) {
-        if (text == null || label == null) return "";
 
-        String escapedLabel = Pattern.quote(label);
+        if (text == null || label == null)
+            return "";
+        
+        int start = text.toUpperCase().indexOf(label.toUpperCase());
+        
+        if (start == -1)
+            return "";
 
-        // Captura hasta el siguiente label conocido (dos puntos seguido de texto)
-        // o hasta 80 caracteres máximo para valores de campo simples
-        Pattern pattern = Pattern.compile(
-                escapedLabel + "\\s*([^\\n]{1,120})(?:\\n|$)",
-                Pattern.CASE_INSENSITIVE
-        );
-        Matcher matcher = pattern.matcher(text);
+        start += label.length();
+
+        String rest = text.substring(start);
+        Pattern nextLabel = Pattern.compile("\\s+[A-Za-zÁÉÍÓÚÑÜ()/. ]{2,50}:");
+        Matcher matcher = nextLabel.matcher(rest);
+
         if (matcher.find()) {
-            String value = matcher.group(1).trim();
-            // Corta si encuentra otro "Label:" dentro del valor capturado
-            int nextLabelIdx = value.indexOf(":");
-            if (nextLabelIdx > 0 && nextLabelIdx < value.length() - 1) {
-                // Verifica que no sea parte de un valor (ej: "119/78")
-                String beforeColon = value.substring(0, nextLabelIdx).trim();
-                if (!beforeColon.isEmpty() && !beforeColon.matches(".*\\d.*")) {
-                    value = beforeColon;
-                }
-            }
-            return value.trim();
+            return rest.substring(0, matcher.start()).trim();
         }
-        return "";
+
+        return rest.trim();
     }
 
     public String extractBetweenLabels(String text, String startLabel, String endLabel) {
@@ -46,7 +41,6 @@ public class OcrFieldExtractor {
         int startIdx = upper.indexOf(upperStart);
         if (startIdx == -1) return "";
 
-        // Avanzar al final del label de inicio
         startIdx += upperStart.length();
 
         int endIdx = upper.indexOf(upperEnd, startIdx);
@@ -68,7 +62,6 @@ public class OcrFieldExtractor {
 
         startIdx += upperSub.length();
 
-        // Buscar cuál de los nextTitles aparece primero
         int endIdx = -1;
         for (String next : nextTitles) {
             int idx = upper.indexOf(next.toUpperCase(), startIdx);
@@ -82,6 +75,138 @@ public class OcrFieldExtractor {
                 : text.substring(startIdx, endIdx);
 
         return result.trim();
+    }
+
+    public String extractRowAnswer(String text, String rowLabel) {
+
+        if (text == null || rowLabel == null)
+            return "";
+
+        Pattern pattern = Pattern.compile(
+                Pattern.quote(rowLabel) + ".*?\\b(SI|NO)\\b",
+                Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+
+        Matcher matcher = pattern.matcher(text);
+
+        if (matcher.find()) {
+            return matcher.group(1).toUpperCase();
+        }
+
+        return "";
+    }
+
+    public String extractExposureTime(String text) {
+        if (text == null) return "";
+
+        // Patrón 1: "1 año(s) 0 mes(es)" explícito
+        Matcher m1 = Pattern.compile("(\\d+)\\s*[Aa][Ññ][Oo][Ss]?\\s+(\\d+)\\s*[Mm][Ee][Ss]").matcher(text);
+        if (m1.find()) return m1.group(1) + " años " + m1.group(2) + " meses";
+
+        // Patrón 2: columnas de tabla "| 1 | 0" al final de línea (años | meses)
+        Matcher m2 = Pattern.compile("[|\\s]+(\\d+)\\s*[|]\\s*(\\d+)\\s*$", Pattern.MULTILINE).matcher(text);
+        if (m2.find()) return m2.group(1) + " años " + m2.group(2) + " meses";
+
+        // Patrón 3: dos números al final de línea "1 0"
+        Matcher m3 = Pattern.compile("(\\d+)\\s+(\\d+)\\s*$", Pattern.MULTILINE).matcher(text);
+        if (m3.find()) return m3.group(1) + " años " + m3.group(2) + " meses";
+
+        return "";
+    }
+
+    public String extractOccupationalConcept(String text){
+
+        if(text==null)
+            return "";
+
+        Matcher m = Pattern.compile(
+                "\\b(APTO|NO APTO|APLAZADO|REUBICAR|REUBICACION)\\b",
+                Pattern.CASE_INSENSITIVE)
+                .matcher(text);
+
+        if(m.find())
+            return m.group(1).toUpperCase();
+
+        return "";
+    }
+
+    public String extractDiagnosisCode(String text){
+
+        Matcher m = Pattern.compile("\\b([A-Z]\\d{3})\\b")
+                .matcher(text);
+
+        return m.find()
+                ? m.group(1)
+                : "";
+    }
+
+    public String extractDiagnosisName(String text){
+
+        Matcher m = Pattern.compile(
+                "[A-Z]\\d{3}\\s+([A-ZÁÉÍÓÚÑ ]+)",
+                Pattern.CASE_INSENSITIVE)
+                .matcher(text);
+
+        if(!m.find())
+            return "";
+
+        String diagnosis = m.group(1);
+
+        diagnosis = diagnosis.replaceAll(
+                "\\b(COMUN|COMÚN|ORIGEN|TIPO|IMPRESION|IMPRESIÓN|DIAGNOSTICA|DIAGNÓSTICA).*",
+                "");
+
+        return diagnosis.trim();
+    }
+
+    public String extractHealthRequirements(String text) {
+
+        if (text == null || text.isBlank()) {
+            return "";
+        }
+
+        // Normalizar espacios
+        String normalized = text.replaceAll("[\\r\\n]+", " ")
+                                .replaceAll("\\s+", " ")
+                                .trim();
+
+        // Caso: NO SE EVALUARÓN REQUISITOS DE SALUD (...) N/A
+        Pattern p = Pattern.compile(
+                "(NO SE EVALUAR[ÓO]N REQUISITOS DE SALUD.*?\\))(?:\\s+)(N/?A)",
+                Pattern.CASE_INSENSITIVE);
+
+        Matcher m = p.matcher(normalized);
+
+        if (m.find()) {
+            return m.group(1).trim() + ", Cumple: " + m.group(2).toUpperCase();
+        }
+
+        // Si no encontró el caso anterior, intenta entre etiquetas
+        String between = extractBetweenLabels(
+                text,
+                "Cumple",
+                "Restricciones Laborales");
+
+        if (!between.isBlank()) {
+            return between.replaceAll("\\s+", " ").trim();
+        }
+
+        // Solo como último recurso
+        if (normalized.toUpperCase().contains("SIN REQUISITOS DE SALUD")) {
+            return "SIN REQUISITOS DE SALUD";
+        }
+
+        return normalized;
+    }
+
+    public String extractNumberAfterLabel(String text, String label) {
+
+        Pattern pattern = Pattern.compile(
+                Pattern.quote(label) + "\\s*(\\d+(?:[.,]\\d+)?)",
+                Pattern.CASE_INSENSITIVE);
+
+        Matcher matcher = pattern.matcher(text);
+
+        return matcher.find() ? matcher.group(1) : "";
     }
 
     // ── Utilidades de limpieza ──────────────────────────────────────────────
@@ -100,11 +225,9 @@ public class OcrFieldExtractor {
     public String extractDate(String value) {
         if (value == null || value.isEmpty()) return "";
 
-        // Formato dd/MM/yyyy
         Matcher m1 = Pattern.compile("\\d{2}/\\d{2}/\\d{4}").matcher(value);
         if (m1.find()) return m1.group();
 
-        // Formato "12 de enero de 2024"
         return extractLongFormatDate(value);
     }
 
@@ -139,6 +262,17 @@ public class OcrFieldExtractor {
                 .replace("Ñ","N")
                 .replaceAll("[^A-Z0-9\\s:/.-]", " ")
                 .replaceAll("\\s+", " ")
+                .trim();
+    }
+
+    public String normalizeForExtraction(String text) {
+        if (text == null) return "";
+        return text
+                .replaceAll("(?m)^\\s*[oO0]\\s*$\\n?", "")
+                .replaceAll("(?m)^[a-zA-Z]\\s+(?=[A-ZÁÉÍÓÚÑ])", "")
+                .replaceAll("[ \\t]{2,}", " ")
+                .replaceAll("\\r\\n", "\n")
+                .replaceAll("\\n{3,}", "\n\n")
                 .trim();
     }
 }

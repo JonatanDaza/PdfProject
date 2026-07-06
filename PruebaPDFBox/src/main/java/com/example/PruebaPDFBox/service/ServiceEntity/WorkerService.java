@@ -29,6 +29,7 @@ public class WorkerService {
     public Worker buildFromExtractedData(Map<String, String> extractedData, String cc) {
         Worker worker = new Worker();
         worker.setCC(cc);
+        worker.setName(extractedData.get("Nombre del Trabajador a Aspirante:"));
         worker.setGender(extractedData.get("Genero:"));
         worker.setAge(extractedData.get("Edad:"));
         worker.setMaritalStatus(extractedData.get("Estado Civil:"));

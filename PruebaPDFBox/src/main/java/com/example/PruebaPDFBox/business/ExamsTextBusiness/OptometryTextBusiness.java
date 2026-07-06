@@ -34,6 +34,8 @@ public class OptometryTextBusiness {
             Map<String, String> subSections = ocrSubSectionExtractor.extract(
                     context, section, SUB_SECTION_TITLES
             );
+            
+            subSections.replaceAll((k, v) -> ocrFieldExtractor.normalizeForExtraction(v));
 
             System.out.println("\n=== OPTOMETRY - SubSecciones encontradas ===");
             subSections.forEach((k, v) -> System.out.println(
@@ -105,11 +107,10 @@ public class OptometryTextBusiness {
         String codigoText = subSections.get("CÓDIGO");
         if (codigoText != null && !codigoText.isBlank()) {
             values.put("Nombre del Diagnóstico",
-                    ocrFieldExtractor.extractAfterLabel(codigoText, "DIAGNÓSTICO"));
+                    ocrFieldExtractor.extractDiagnosisName(codigoText));
             values.put("Código de Examen",
-                    ocrFieldExtractor.extractAfterLabel(codigoText, "CÓDIGO"));
+                    ocrFieldExtractor.extractDiagnosisCode(codigoText));
 
-            System.out.println("\n=== CÓDIGO - Valores extraídos ===");
             System.out.println("  [Nombre del Diagnóstico] -> '" + values.get("Nombre del Diagnóstico") + "'");
             System.out.println("  [Código de Examen]       -> '" + values.get("Código de Examen") + "'");
         }

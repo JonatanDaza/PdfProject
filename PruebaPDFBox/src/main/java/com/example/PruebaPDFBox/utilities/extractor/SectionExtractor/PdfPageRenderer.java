@@ -13,36 +13,21 @@ import java.util.List;
 @Component
 public class PdfPageRenderer {
 
-    private static final float DPI = 300f; // Balance calidad/rendimiento para OCR
+    private static final float DPI = 300f;
 
-    /**
-     * Renderiza todas las páginas del PDF como imágenes en memoria.
-     * Las imágenes NO se guardan en disco.
-     *
-     * @return Lista de imágenes indexadas por número de página (0-based)
-     */
     public List<BufferedImage> renderPages(PDDocument document) throws IOException {
         PDFRenderer renderer = new PDFRenderer(document);
         List<BufferedImage> pages = new ArrayList<>();
 
-        for (int i = 0; i < document.getNumberOfPages(); i++) {
-            BufferedImage image = renderer.renderImageWithDPI(i, DPI, ImageType.GRAY);
-            pages.add(image);
-        }
-
-        return pages;
-    }
-
-    /**
-     * Renderiza un rango específico de páginas (útil si el PDF es muy grande).
-     */
-    public List<BufferedImage> renderPages(PDDocument document, int startPage, int endPage) throws IOException {
-        PDFRenderer renderer = new PDFRenderer(document);
-        List<BufferedImage> pages = new ArrayList<>();
-
-        int end = Math.min(endPage, document.getNumberOfPages() - 1);
-        for (int i = startPage; i <= end; i++) {
-            pages.add(renderer.renderImageWithDPI(i, DPI, ImageType.GRAY));
+        int total = document.getNumberOfPages();
+        for (int i = 0; i < total; i++) {
+            try {
+                pages.add(renderer.renderImageWithDPI(i, DPI, ImageType.RGB));
+            } catch (Exception e) {
+                System.err.println("Error rendering page " + (i + 1) + ": " + e.getMessage());
+                // Add a tiny placeholder image so page indexes remain aligned with the document
+                pages.add(new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB));
+            }
         }
 
         return pages;

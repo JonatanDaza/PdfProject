@@ -17,9 +17,6 @@ import java.util.List;
 
 public class PdfImgSectionExtractorAuxiliary {
 
-    public static final int MIN_EMBEDDED_WIDTH = 700;
-    public static final int MIN_EMBEDDED_HEIGHT = 300;
-
     public List<BufferedImage> extractEmbeddedImages(PDPage page, int pageNum) {
         try {
             if (page.getResources() == null) return Collections.emptyList();
@@ -34,82 +31,41 @@ public class PdfImgSectionExtractorAuxiliary {
 
     private List<BufferedImage> extractFromResources(PDResources resources) throws IOException {
         List<BufferedImage> images = new ArrayList<>();
-
         for (COSName name : resources.getXObjectNames()) {
-            PDXObject xObject = resources.getXObject(name);
-            images.addAll(extractFromXObject(xObject));
+            images.addAll(extractFromXObject(resources.getXObject(name)));
         }
-
         return images;
     }
 
     private List<BufferedImage> extractFromXObject(PDXObject xObject) throws IOException {
-        if (xObject instanceof PDImageXObject) {
-            return extractFromImage((PDImageXObject) xObject);
+        if (xObject instanceof PDImageXObject img) {
+            BufferedImage buffered = img.getImage();
+            if (buffered == null) return Collections.emptyList();
+            return List.of(enhanceImageForOCR(buffered));
         }
-
-        if (xObject instanceof PDFormXObject) {
-            return extractFromForm((PDFormXObject) xObject);
+        if (xObject instanceof PDFormXObject form) {
+            if (form.getResources() == null) return Collections.emptyList();
+            return extractFromResources(form.getResources());
         }
-
         return Collections.emptyList();
     }
 
-    private List<BufferedImage> extractFromImage(PDImageXObject imageXObject) throws IOException {
-        BufferedImage bufferedImage = imageXObject.getImage();
-
-        if (!isValidImageSize(bufferedImage)) {
-            return Collections.emptyList();
-        }
-
-        BufferedImage processedImage = enhanceImageForOCR(bufferedImage);
-
-        return List.of(processedImage);
-    }
-
-    private List<BufferedImage> extractFromForm(PDFormXObject form) throws IOException {
-        if (form.getResources() == null) return Collections.emptyList();
-        return extractFromResources(form.getResources()); // ← reutiliza Nivel 1
-    }
-
     private BufferedImage enhanceImageForOCR(BufferedImage original) {
-        int width = original.getWidth();
-        int height = original.getHeight();
-
-        BufferedImage grayscale = convertToGrayscale(original, width, height);
-        return increaseContrast(grayscale, width, height);
-    }
-
-    private BufferedImage convertToGrayscale(BufferedImage original, int width, int height) {
-        BufferedImage grayscale = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+        int w = original.getWidth(), h = original.getHeight();
+        BufferedImage grayscale = new BufferedImage(w, h, BufferedImage.TYPE_BYTE_GRAY);
         Graphics2D g = grayscale.createGraphics();
         g.drawImage(original, 0, 0, null);
         g.dispose();
-        return grayscale;
-    }
 
-    private BufferedImage increaseContrast(BufferedImage grayscale, int width, int height) {
-        BufferedImage enhanced = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
-
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                int rgb = grayscale.getRGB(x, y);
-                int gray = (rgb >> 16) & 0xff;
-
-                gray = (int) ((gray - 128) * 1.5 + 128);
-                gray = Math.max(0, Math.min(255, gray));
-
-                int newRgb = (gray << 16) | (gray << 8) | gray;
-                enhanced.setRGB(x, y, newRgb);
+        BufferedImage enhanced = new BufferedImage(w, h, BufferedImage.TYPE_BYTE_GRAY);
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                int gray = (grayscale.getRGB(x, y) >> 16) & 0xff;
+                gray = Math.max(0, Math.min(255, (int) ((gray - 128) * 1.2 + 128)));
+                int rgb = (gray << 16) | (gray << 8) | gray;
+                enhanced.setRGB(x, y, rgb);
             }
         }
-
         return enhanced;
-    }
-
-    private boolean isValidImageSize(BufferedImage image) {
-        return image != null &&
-                image.getWidth() >= MIN_EMBEDDED_WIDTH &&
-                image.getHeight() >= MIN_EMBEDDED_HEIGHT;
     }
 }

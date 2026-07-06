@@ -18,6 +18,14 @@ public class HealthRequirementMapper extends GenericJsonMapper<HealthRequirement
     private static final Pattern COLON_PATTERN = Pattern.compile("^(.+?)[:：]\\s*(.+?)$");
     private static final int MIN_LENGTH = 5, MIN_WORDS = 2, MIN_MATCHES = 2;
 
+    private static final Pattern STATUS_PATTERN = Pattern.compile(
+        "\\b(NO\\s+APTO|APTO|NO\\s+CUMPLE|CUMPLE|SÍ|SI|NO)\\b",
+            Pattern.CASE_INSENSITIVE);
+        
+    private static final Pattern CUMPLE_PATTERN =
+        Pattern.compile("^(.*?)\\s*,?\\s*Cumple\\s*:\\s*(.+)$",
+            Pattern.CASE_INSENSITIVE);
+
     public String parseToJson(String rawText) {
         if (isNullOrEmpty(rawText)) return "[]";
 
@@ -57,20 +65,47 @@ public class HealthRequirementMapper extends GenericJsonMapper<HealthRequirement
 
     @Override
     protected HealthRequirementDto parseLine(String line) {
+
         line = line.replaceFirst("^\\d+\\.\\s*", "").trim();
 
-        // Intenta formato "Etiqueta: Valor"
-        Matcher matcher = COLON_PATTERN.matcher(line);
-        if (matcher.find()) {
-            return createDto(matcher.group(1).trim(), normalize(matcher.group(2).trim()));
+        if (line.isBlank()) {
+            return createDto("", "");
         }
 
-        // Intenta separar por palabra clave
-        for (String keyword : KEYWORDS) {
-            int idx = line.toUpperCase().lastIndexOf(keyword);
-            if (idx > 0) {
-                return createDto(line.substring(0, idx).trim(), normalize(line.substring(idx).trim()));
-            }
+        // Caso: "..., Cumple: N/A"
+        Matcher cumpleMatcher = CUMPLE_PATTERN.matcher(line);
+        if (cumpleMatcher.matches()) {
+            return createDto(
+                    cumpleMatcher.group(1).trim(),
+                    normalize(cumpleMatcher.group(2).trim())
+            );
+        }
+
+        // Caso: "Etiqueta: Valor"
+        Matcher colonMatcher = COLON_PATTERN.matcher(line);
+        if (colonMatcher.matches()) {
+            return createDto(
+                    colonMatcher.group(1).trim(),
+                    normalize(colonMatcher.group(2).trim())
+            );
+        }
+
+        // Buscar la última palabra de estado como palabra completa
+        Matcher statusMatcher = STATUS_PATTERN.matcher(line);
+
+        int start = -1;
+        int end = -1;
+
+        while (statusMatcher.find()) {
+            start = statusMatcher.start();
+            end = statusMatcher.end();
+        }
+
+        if (start > 0) {
+            return createDto(
+                    line.substring(0, start).trim(),
+                    normalize(line.substring(start, end).trim())
+            );
         }
 
         return createDto(line, "");
@@ -96,18 +131,21 @@ public class HealthRequirementMapper extends GenericJsonMapper<HealthRequirement
                      Character.toUpperCase(w.charAt(0)) + (w.length() > 1 ? w.substring(1) : ""))
             .collect(Collectors.joining(" "));
     }
-
+    
     private String normalize(String status) {
-        if (isNullOrEmpty(status)) return "";
+
+        if (isNullOrEmpty(status)) {return "";}
 
         String s = status.toUpperCase().trim();
-        if (s.contains("APTO") && !s.contains("NO")) return "APTO";
-        if (s.contains("NO APTO")) return "NO APTO";
-        if (s.contains("CUMPLE") && !s.contains("NO")) return "CUMPLE";
-        if (s.contains("NO CUMPLE")) return "NO CUMPLE";
-        if (s.equals("SÍ") || s.equals("SI")) return "SÍ";
-        if (s.equals("NO")) return "NO";
 
-        return s;
+        if (s.equals("N/A") || s.equals("NA")) {return "N/A";}
+        if (s.equals("NO APTO")) {return "NO APTO";}
+        if (s.equals("APTO")) {return "APTO";}
+        if (s.equals("NO CUMPLE")) {return "NO CUMPLE";}
+        if (s.equals("CUMPLE")) {return "CUMPLE";}
+        if (s.equals("SI") || s.equals("SÍ")) {return "SÍ";}
+        if (s.equals("NO")) {return "NO";}
+
+        return status.trim();
     }
 }

@@ -21,24 +21,14 @@ public class PdfImgSectionExtractor {
 
         for (int pageNum = sectionArea.startPage(); pageNum <= sectionArea.endPage(); pageNum++) {
             PDPage page = document.getPage(pageNum);
-            List<BufferedImage> embeddedImages = auxiliar.extractEmbeddedImages(page, pageNum);
-
-            if (!embeddedImages.isEmpty()) {
-                images.addAll(embeddedImages);
-            }
+            List<BufferedImage> embedded = auxiliar.extractEmbeddedImages(page, pageNum);
+            images.addAll(embedded);
         }
 
         return images;
     }
 
     public boolean hasValidImages(PDDocument document, SectionArea section) {
-
-        List<BufferedImage> images = extractImages(document, section);
-
-        return images.stream()
-                .anyMatch(img ->
-                img.getWidth() >= PdfImgSectionExtractorAuxiliary.MIN_EMBEDDED_WIDTH &&
-                img.getHeight() >= PdfImgSectionExtractorAuxiliary.MIN_EMBEDDED_HEIGHT
-                );
+        return !extractImages(document, section).isEmpty();
     }
 }

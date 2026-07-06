@@ -25,7 +25,7 @@ public class Worker {
 
     @Column(name = "cc", nullable = false, unique = true)
     private String CC;
-//    private String name;
+    private String name;
     private String Gender;
     private String Age;
     private String MaritalStatus;

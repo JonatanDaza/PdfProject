@@ -1,5 +1,7 @@
 package com.example.PruebaPDFBox.utilities.extractor.SectionExtractor;
 
+import java.awt.image.BufferedImage;
+
 import com.example.PruebaPDFBox.record.SectionArea;
 import com.example.PruebaPDFBox.utilities.extractor.TextExtractor.ImageTextExtractor;
 
@@ -8,9 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.stereotype.Component;
 
-import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.util.*;
+import java.text.Normalizer;
 
 import com.example.PruebaPDFBox.record.OcrPageContext;
 
@@ -18,143 +19,169 @@ import com.example.PruebaPDFBox.record.OcrPageContext;
 @RequiredArgsConstructor
 public class UnifiedSectionDetector {
 
-    private final PdfPageRenderer pdfPageRenderer;
-    private final ImageTextExtractor imageTextExtractor;
-
     public static final Map<String, Set<String>> ALL_SECTION_TITLES = buildSectionTitles();
+
+    private final ImageTextExtractor imageTextExtractor;
+    private final PdfImgSectionExtractor pdfImgSectionExtractor;
+
+    private static final Map<String, Set<String>> SECTION_ANCHORS = Map.of(
+            "OCCUPATIONAL_MEDICINE_LABEL", Set.of("MEDICO", "MÉDICO"),
+            "AUDIOMETRY_LABEL",            Set.of("FONOAUDIOLOGO", "FONOAUDIÓLOGO"),
+            "OPTOMETRY_LABEL",             Set.of("OPTOMETRA", "OPTOMETRISTA")
+    );
+
+    private static final Map<String, String> SECTION_CANONICAL_NAMES = Map.of(
+            "OPTOMETRY_LABEL",            "OPTOMETRÍA",
+            "OCCUPATIONAL_MEDICINE_LABEL","EVALUACIÓN MÉDICA OCUPACIONAL",
+            "AUDIOMETRY_LABEL",           "AUDIOMETRÍA",
+            "LABORATORY_LABEL_TEXT",      "LABORATORIO",
+            "PSYCHOMOTOR_LABEL",          "PSICOMOTRICIDAD",
+            "PSYCHOLOGY_LABEL",           "PSICOLOGÍA OCUPACIONAL",
+            "SPIROMETRY_LABEL",           "ESPIROMETRÍA",
+            "GLYCEMYA_IMAGE_LABEL",       "GLICEMIA",
+            "HEMOGRAM_IMAGE_LABEL",       "HEMOGRAMA",
+            "LIPID_PROFILE_IMAGE_LABEL",  "PERFIL LIPÍDICO"
+    );
 
     private static Map<String, Set<String>> buildSectionTitles() {
         Map<String, Set<String>> titles = new LinkedHashMap<>();
         titles.put("OPTOMETRY_LABEL",            Set.of("EXAMEN DE OPTOMETRIA", "EXAMEN DE CONSULTA DE OPTOMETRIA", "EXAMEN DE VISIOMETRIA"));
-        titles.put("OCCUPATIONAL_MEDICINE_LABEL", Set.of("EVALUACIÓN MEDICA OCUPACIONAL"));
-        titles.put("AUDIOMETRY_LABEL",            Set.of("AUDIOMETRÍA"));
+        titles.put("OCCUPATIONAL_MEDICINE_LABEL", Set.of("EVALUACION MEDICA OCUPACIONAL", "EVALUACIÓN MEDICA OCUPACIONAL"));
+        titles.put("AUDIOMETRY_LABEL",            Set.of("AUDIOMETRIA", "AUDIOMETRÍA"));
         titles.put("LABORATORY_LABEL_TEXT",       Set.of("INFORME DE RESULTADOS", "EXTENDIDO DE SANGRE PERIFERICA, ESTUDIO DE MORFOLOGIA"));
-        titles.put("PSYCHOMOTOR_LABEL",           Set.of("Resumen de Resultados Test PSICO-MOTRÍZ"));
-        titles.put("PSYCHOLOGY_LABEL",            Set.of("PSICOLOGÍA OCUPACIONAL"));
-        titles.put("SPIROMETRY_LABEL",            Set.of("INFORME DE ESPIROMETRÍA"));
+        titles.put("PSYCHOMOTOR_LABEL",           Set.of("RESUMEN DE RESULTADOS TEST PSICO-MOTRIZ"));
+        titles.put("PSYCHOLOGY_LABEL",            Set.of("PSICOLOGIA OCUPACIONAL", "PSICOLOGÍA OCUPACIONAL"));
+        titles.put("SPIROMETRY_LABEL",            Set.of("INFORME DE ESPIROMETRIA", "INFORME DE ESPIROMETRÍA"));
         titles.put("GLYCEMYA_IMAGE_LABEL",        Set.of("HEMATOLOGIA GLICEMIA ANALITO"));
         titles.put("HEMOGRAM_IMAGE_LABEL",        Set.of("CUADRO HEMATICO (HEMOGRAMA)"));
         titles.put("LIPID_PROFILE_IMAGE_LABEL",   Set.of("HEMATOLOGIA PERFIL LIPIDICO"));
         return Collections.unmodifiableMap(titles);
     }
 
-    /** Entry point cuando se tiene el PDDocument (renderiza + OCR internamente) */
-    public Map<String, SectionArea> detect(PDDocument document) throws IOException {
-        List<BufferedImage> pages = pdfPageRenderer.renderPages(document);
-        String[] pageTexts = extractAllPageTexts(pages);          // BufferedImage → OCR
-        return detectSectionsFromTexts(pageTexts, document.getNumberOfPages());
+    public Map<String, SectionArea> detectFromContext(OcrPageContext context, PDDocument document) {
+        String[] pageTexts = context.pageTexts().toArray(new String[0]);
+        String[] enriched = enrichWithEmbeddedImages(pageTexts, document);
+        return detectSectionsFromTexts(enriched, context.totalPages());
     }
 
-    /** Entry point cuando el OCR ya fue hecho fuera (OcrPageContext ya tiene los textos) */
     public Map<String, SectionArea> detectFromContext(OcrPageContext context) {
-        String[] pageTexts = context.pageTexts().toArray(new String[0]);  // String[] directo
+        String[] pageTexts = context.pageTexts().toArray(new String[0]);
         return detectSectionsFromTexts(pageTexts, context.totalPages());
     }
 
-    // ── Método privado unificado ────────────────────────────────────────────
+    private String[] enrichWithEmbeddedImages(String[] pageTexts, PDDocument document) {
+        String[] enriched = Arrays.copyOf(pageTexts, pageTexts.length);
+        for (int i = 0; i < document.getNumberOfPages(); i++) {
+            List<BufferedImage> images = pdfImgSectionExtractor.extractImages(
+                    document, new SectionArea(i, 0, i, Float.MAX_VALUE, ""));
+            for (BufferedImage img : images) {
+                String imgText = imageTextExtractor.extractTextFromSingleImage(img);
+                if (imgText != null && !imgText.isBlank()) {
+                    enriched[i] = enriched[i] + "\n" + imgText.toUpperCase();
+                }
+            }
+        }
+        return enriched;
+    }
 
     private Map<String, SectionArea> detectSectionsFromTexts(String[] pageTexts, int totalPages) {
         Map<String, SectionArea> sections = new LinkedHashMap<>();
 
-        for (Map.Entry<String, Set<String>> entry : ALL_SECTION_TITLES.entrySet()) {
-            String sectionKey    = entry.getKey();
-            Set<String> candidates = entry.getValue();
-
-            SectionArea area = findSection(candidates, pageTexts, totalPages);
-            if (area != null) {
-                sections.put(sectionKey, area);
-                System.out.println("Sección detectada: " + sectionKey +
-                        " (páginas " + (area.startPage() + 1) + "-" + (area.endPage() + 1) +
-                        ", título: '" + area.examName() + "')");
+        int currentPage = 0;
+        while (currentPage < pageTexts.length) {
+            boolean matched = false;
+            for (Map.Entry<String, Set<String>> entry : ALL_SECTION_TITLES.entrySet()) {
+                SectionArea area = findSection(entry.getKey(), entry.getValue(), pageTexts, totalPages, currentPage);
+                if (area != null && !sections.containsKey(entry.getKey())) {
+                    sections.put(entry.getKey(), area);
+                    System.out.println("Sección detectada: " + entry.getKey() +
+                            " (páginas " + (area.startPage() + 1) + "-" + (area.endPage() + 1) +
+                            ", título: '" + area.examName() + "')");
+                    currentPage = area.endPage() + 1;
+                    matched = true;
+                    break;
+                }
             }
+            if (!matched) currentPage++;
         }
 
         return sections;
     }
 
-    // ── Helpers ─────────────────────────────────────────────────────────────
-
-    private String[] extractAllPageTexts(List<BufferedImage> pages) {
-        String[] texts = new String[pages.size()];
-        for (int i = 0; i < pages.size(); i++) {
-            String text = imageTextExtractor.extractTextFromSingleImage(pages.get(i));
-            texts[i] = text != null ? text.toUpperCase() : "";
-
-            System.out.println("\n========== OCR COMPLETO PÁGINA " + (i + 1) + " ==========");
-            System.out.println(texts[i]);
-            System.out.println("========== FIN PÁGINA " + (i + 1) + " ==========\n");
-        }
-        return texts;
-    }
-
-    private SectionArea findSection(Set<String> candidates, String[] pageTexts, int totalPages) {
-        for (int page = 0; page < pageTexts.length; page++) {
+    private SectionArea findSection(String sectionKey, Set<String> candidates, String[] pageTexts, int totalPages, int startPage) {
+        for (int page = startPage; page < pageTexts.length; page++) {
+            String normalizedPage = normalize(pageTexts[page]);
             for (String candidate : candidates) {
-                String pageText = pageTexts[page];
-                String candidateUpper = candidate.toUpperCase();
-
-                // 1. Búsqueda exacta
-                if (pageText.contains(candidateUpper)) {
-                    return buildSection(page, candidate, pageTexts, totalPages);
-                }
-
-                // 2. Búsqueda normalizada (sin tildes)
-                if (normalize(pageText).contains(normalize(candidateUpper))) {
-                    System.out.println("  ✅ (normalizado) '" + candidate + "' en página " + (page + 1));
-                    return buildSection(page, candidate, pageTexts, totalPages);
-                }
-
-                // 3. Búsqueda por todas las palabras significativas (≥4 chars)
-                String[] words = candidateUpper.split("\\s+");
-                long significantWords = Arrays.stream(words)
-                        .filter(w -> w.length() >= 4)
-                        .count();
-                long matchedWords = Arrays.stream(words)
-                        .filter(w -> w.length() >= 4 && pageText.contains(w))
-                        .count();
-
-                if (significantWords > 0 && matchedWords == significantWords) {
-                    System.out.println("  ✅ (por palabras) '" + candidate + "' en página " + (page + 1));
-                    return buildSection(page, candidate, pageTexts, totalPages);
+                String normalizedCandidate = normalize(candidate);
+                if (normalizedPage.contains(normalizedCandidate) || fuzzyMatch(normalizedPage, normalizedCandidate)) {
+                    int end = findSectionEnd(sectionKey, pageTexts, totalPages, page);
+                    System.out.println("  ✅ '" + candidate + "' en página " + (page + 1));
+                    return new SectionArea(page, 0, end, Float.MAX_VALUE, SECTION_CANONICAL_NAMES.getOrDefault(sectionKey, candidate));
                 }
             }
         }
         return null;
     }
 
-    private SectionArea buildSection(int page, String candidate, String[] pageTexts, int totalPages) {
-        int endPage = findNextSectionPage(page, pageTexts, totalPages);
-        System.out.println("  ✅ '" + candidate + "' encontrado en página " + (page + 1));
-        return new SectionArea(page, 0, endPage, Float.MAX_VALUE, candidate);
+    private int findSectionEnd(String sectionKey, String[] pageTexts, int totalPages, int currentPage) {
+        Set<String> anchors = SECTION_ANCHORS.getOrDefault(sectionKey, Collections.emptySet());
+        if (!anchors.isEmpty()) {
+            for (int page = currentPage + 1; page < pageTexts.length; page++) {
+                String norm = normalize(pageTexts[page]);
+                if (anchors.stream().anyMatch(a -> norm.contains(normalize(a)))) {
+                    return page;
+                }
+            }
+            return totalPages - 1;
+        }
+
+        Set<String> allNormalized = ALL_SECTION_TITLES.values().stream()
+                .flatMap(Set::stream)
+                .map(this::normalize)
+                .collect(java.util.stream.Collectors.toSet());
+
+        for (int page = currentPage + 1; page < pageTexts.length; page++) {
+            String norm = normalize(pageTexts[page]);
+            if (allNormalized.stream().anyMatch(norm::contains)) return page - 1;
+        }
+        return totalPages - 1;
     }
 
     private String normalize(String text) {
         if (text == null) return "";
-        return text
-            .replace("Á","A").replace("É","E").replace("Í","I")
-            .replace("Ó","O").replace("Ú","U").replace("Ü","U")
-            .replace("Ñ","N")
-            .replaceAll("[^A-Z0-9\\s]", " ")
-            .replaceAll("\\s+", " ")
-            .trim();
+        return Normalizer.normalize(text, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toUpperCase()
+                .replaceAll("[^A-Z0-9\\s]", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
     }
 
-    private int findNextSectionPage(int currentPage, String[] pageTexts, int totalPages) {
-        Set<String> allTitlesUpper = new HashSet<>();
-        for (Set<String> titles : ALL_SECTION_TITLES.values()) {
-            for (String t : titles) {
-                allTitlesUpper.add(t.toUpperCase());
-            }
+    private boolean fuzzyMatch(String text, String pattern) {
+        if (text == null || pattern == null || pattern.isBlank()) return false;
+        if (text.contains(pattern)) return true;
+        int maxDistance = Math.max(1, pattern.length() / 4);
+        int windowSize = pattern.length();
+        for (int i = 0; i + windowSize <= text.length(); i++) {
+            if (levenshteinDistance(text.substring(i, i + windowSize), pattern) <= maxDistance) return true;
         }
+        return false;
+    }
 
-        for (int page = currentPage + 1; page < pageTexts.length; page++) {
-            for (String title : allTitlesUpper) {
-                if (pageTexts[page].contains(title)) {
-                    return page - 1;
-                }
+    private int levenshteinDistance(String a, String b) {
+        int n = a.length(), m = b.length();
+        if (n == 0) return m;
+        if (m == 0) return n;
+        int[] prev = new int[m + 1], curr = new int[m + 1];
+        for (int j = 0; j <= m; j++) prev[j] = j;
+        for (int i = 1; i <= n; i++) {
+            curr[0] = i;
+            for (int j = 1; j <= m; j++) {
+                int cost = a.charAt(i - 1) == b.charAt(j - 1) ? 0 : 1;
+                curr[j] = Math.min(Math.min(curr[j-1] + 1, prev[j] + 1), prev[j-1] + cost);
             }
+            System.arraycopy(curr, 0, prev, 0, m + 1);
         }
-
-        return totalPages - 1;
+        return prev[m];
     }
 }

@@ -14,35 +14,18 @@ public class OcrSubSectionExtractor {
 
     private final OcrFieldExtractor ocrFieldExtractor;
 
-    /**
-     * Devuelve un mapa de subTítulo → texto de esa subsección.
-     * Reemplaza PdfSubSectionExtractor; trabaja sobre texto OCR en vez de coordenadas.
-     *
-     * @param context    contexto OCR con texto por página
-     * @param section    área de la sección principal (páginas start→end)
-     * @param subTitles  títulos de subsecciones a detectar
-     */
     public Map<String, String> extract(
             OcrPageContext context,
             SectionArea section,
             Set<String> subTitles
     ) {
-        // Texto completo de la sección principal
         String sectionText = context.textForSection(section.startPage(), section.endPage());
-
-        // Ordenar los títulos por posición de aparición en el texto
         List<String> orderedTitles = findOrderedTitles(sectionText, subTitles);
 
         Map<String, String> result = new LinkedHashMap<>();
-
         for (int i = 0; i < orderedTitles.size(); i++) {
             String current = orderedTitles.get(i);
-
-            // Los títulos siguientes son el límite de esta subsección
-            Set<String> nextTitles = new HashSet<>(orderedTitles.subList(
-                    i + 1, orderedTitles.size()
-            ));
-
+            Set<String> nextTitles = new HashSet<>(orderedTitles.subList(i + 1, orderedTitles.size()));
             String subText = ocrFieldExtractor.extractSubSection(sectionText, current, nextTitles);
             result.put(current.toUpperCase().trim(), subText);
         }
@@ -51,17 +34,26 @@ public class OcrSubSectionExtractor {
     }
 
     private List<String> findOrderedTitles(String text, Set<String> subTitles) {
-        String upper = text.toUpperCase();
+        String upperNormalized = normalize(text.toUpperCase());
         List<Map.Entry<Integer, String>> found = new ArrayList<>();
 
         for (String title : subTitles) {
-            int idx = upper.indexOf(title.toUpperCase().trim());
-            if (idx != -1) {
-                found.add(Map.entry(idx, title));
-            }
+            String titleNormalized = normalize(title.toUpperCase().trim());
+            int idx = upperNormalized.indexOf(titleNormalized);
+            if (idx != -1) found.add(Map.entry(idx, title));
         }
 
         found.sort(Map.Entry.comparingByKey());
         return found.stream().map(Map.Entry::getValue).toList();
+    }
+
+    private String normalize(String text) {
+        if (text == null) return "";
+        return text
+                .replace("Á","A").replace("É","E").replace("Í","I")
+                .replace("Ó","O").replace("Ú","U").replace("Ü","U")
+                .replace("Ñ","N")
+                .replaceAll("\\s+", " ")
+                .trim();
     }
 }

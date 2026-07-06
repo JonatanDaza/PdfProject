@@ -16,12 +16,6 @@ import java.util.*;
 @Component
 public class ImageTextExtractor {
 
-    private static final int MIN_IMAGE_WIDTH = 1500;
-    public static final int MIN_VALID_IMAGE_WIDTH = 700;
-    public static final int MIN_VALID_IMAGE_HEIGHT = 300;
-
-    private static final int[] PSM_MODES = {6};
-
     private final ThreadLocal<Tesseract> tesseractThreadLocal;
     private final PdfImgSectionExtractor pdfImgSectionExtractor;
     private final ImageTextExtractorAuxiliary auxiliar;
@@ -41,40 +35,31 @@ public class ImageTextExtractor {
 
     public String extractTextFromSingleImage(BufferedImage image) {
         try {
-            if (!auxiliar.isValidTableImage(image)) {
-                return "";
-            }
-            
-            BufferedImage optimizedImage = auxiliar.optimizeImageForOCR(image, MIN_IMAGE_WIDTH);
             Tesseract tesseract = getTesseract();
-            auxiliar.configureTesseract(tesseract);
-            
-            //            // Probar con diferentes PSM modes para mejor detección de títulos
-            //            int[] titlePsmModes = {6, 3, 1}; // PSM 6: bloque uniforme, 3: línea, 1: texto automático
-            //
-            //            for (int psm : titlePsmModes) {
-            //                tesseract.setPageSegMode(psm);
-            //                String text = tesseract.doOCR(optimizedImage);
-            //
-            //                if (!auxiliar.isBlank(text)) {
-            //                    // Limpiar el texto para mejor coincidencia
-            //                    text = text.replaceAll("\\r?\\n+", " ").trim();
-            //                    return text;
-            //                }
-            //            }
-            //
-            //            return "";
+            StringBuilder fullText = new StringBuilder();
 
-            tesseract.setPageSegMode(6);
-            String text = tesseract.doOCR(optimizedImage);
+            // Título — octavo superior con PSM 11
+            tesseract.setPageSegMode(11);
+            String titleText = tesseract.doOCR(image,
+                    new java.awt.Rectangle(0, 0, image.getWidth(), image.getHeight() / 8));
+            if (titleText != null && !titleText.isBlank()) {
+                fullText.append(titleText.trim()).append("\n");
+            }
 
-            // Preserva saltos de línea — solo normaliza múltiples líneas vacías
-            return text.replaceAll("\\r\\n", "\n")
-                    .replaceAll("\\n{3,}", "\n\n")
-                    .trim();
+            // Cuerpo en franjas con PSM 4
+            List<BufferedImage> strips = auxiliar.splitIntoStrips(image, 5, 30);
+            for (BufferedImage strip : strips) {
+                tesseract.setPageSegMode(4);
+                String stripText = tesseract.doOCR(strip);
+                if (stripText != null && !stripText.isBlank()) {
+                    fullText.append(stripText.trim()).append("\n");
+                }
+            }
+
+            return cleanOcrNoise(fullText.toString());
 
         } catch (Exception e) {
-            System.err.println("Error en OCR simple: " + e.getMessage());
+            System.err.println("Error en OCR: " + e.getMessage());
             return "";
         }
     }
@@ -94,10 +79,8 @@ public class ImageTextExtractor {
             );
 
             for (BufferedImage image : images) {
-                if (!auxiliar.isValidTableImage(image)) continue;
-
-                BufferedImage optimizedImage = auxiliar.optimizeImageForOCR(image, MIN_IMAGE_WIDTH);
-                Map<String, String> data = tryExtractWithMultiplePSM(optimizedImage, labels);
+                if (image == null) continue;
+                Map<String, String> data = tryExtractWithMultiplePSM(image, labels);
                 extractedData.putAll(data);
             }
         }
@@ -105,26 +88,11 @@ public class ImageTextExtractor {
         return extractedData;
     }
 
-    private Map<String, String> tryExtractWithMultiplePSM(
-            BufferedImage image,
-            List<String> labels
-    ) {
+    private Map<String, String> tryExtractWithMultiplePSM(BufferedImage image, List<String> labels) {
         Tesseract tesseract = getTesseract();
-        auxiliar.configureTesseract(tesseract);
-
-        for (int psm : PSM_MODES) {
-            tesseract.setPageSegMode(psm);
-            auxiliar.logAttempt(psm);
-
-            Map<String, String> data = extractUsingTextAnalysis(image, labels, tesseract);
-
-            if (!data.isEmpty()) {
-                auxiliar.logSuccess(psm, data.size());
-                return data;
-            }
-        }
-
-        return new HashMap<>();
+        tesseract.setPageSegMode(6);
+        Map<String, String> data = extractUsingTextAnalysis(image, labels, tesseract);
+        return data.isEmpty() ? new HashMap<>() : data;
     }
 
     private Map<String, String> extractUsingTextAnalysis(
@@ -134,17 +102,30 @@ public class ImageTextExtractor {
     ) {
         try {
             String text = tesseract.doOCR(image);
+            String normalized = text.replace("\r", "")
+                    .replaceAll("\\n{2,}", "\n")
+                    .trim();
 
-            String singleLineText = text.replaceAll("\\r?\\n+", " ").replaceAll("\\s+", " ").trim();
+            List<String> lines = Arrays.stream(normalized.split("\n"))
+                    .map(String::trim)
+                    .filter(s -> !s.isBlank())
+                    .toList();
 
-            if (auxiliar.isBlank(singleLineText)) return new HashMap<>();
+            auxiliar.logExtractedText(String.join("\n", lines));
 
-            auxiliar.logExtractedText(singleLineText);
-            return auxiliar.extractDataFromText(labels, new String[]{singleLineText});
-
+            return auxiliar.extractDataFromText(labels, lines.toArray(new String[0]));
         } catch (Exception e) {
             throw new CustomException("Error al analizar el texto: " + e.getMessage(),
                     HttpStatus.BAD_REQUEST);
         }
+    }
+
+    private String cleanOcrNoise(String text) {
+        return text
+                .replaceAll("(?m)^\\s*[oO0]\\s*$\\n?", "")
+                .replaceAll("[ \\t]{2,}", " ")
+                .replaceAll("\\r\\n", "\n")
+                .replaceAll("\\n{3,}", "\n\n")
+                .trim();
     }
 }

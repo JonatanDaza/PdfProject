@@ -11,10 +11,14 @@ import com.example.PruebaPDFBox.service.ServiceEntity.ExamService;
 import com.example.PruebaPDFBox.utilities.extractor.SectionExtractor.OcrSubSectionExtractor;
 import com.example.PruebaPDFBox.utilities.extractor.TextExtractor.OcrFieldExtractor;
 import com.example.PruebaPDFBox.utilities.mapper.MapperJsons.HealthRequirementMapper;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Component;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Component
 @RequiredArgsConstructor
@@ -35,6 +39,8 @@ public class OccupationalMedicineTextBusiness {
                     context, section, SUB_SECTION_TITLES
             );
 
+            subSections.replaceAll((k, v) -> ocrFieldExtractor.normalizeForExtraction(v));
+
             System.out.println("\n=== OCCUPATIONAL - SubSecciones encontradas ===");
             subSections.forEach((k, v) -> System.out.println(
                     "  [" + k + "] -> " + (v != null && !v.isBlank() ? "✅" : "❌ VACÍO")
@@ -49,6 +55,25 @@ public class OccupationalMedicineTextBusiness {
                 System.out.println("rawDate encontrado: '" + rawDate + "'");
                 examDate = ocrFieldExtractor.extractDate(rawDate);
                 System.out.println("examDate formateado: '" + examDate + "'");
+            }
+
+            if (examDate == null || examDate.isBlank()) {
+                String sectionText = context.textForSection(section.startPage(), section.endPage());
+                String fallbackRawDate = ocrFieldExtractor.extractAfterLabel(sectionText, "Fecha:");
+                if (!fallbackRawDate.isBlank()) {
+                    System.out.println("rawDate fallback sección: '" + fallbackRawDate + "'");
+                    examDate = ocrFieldExtractor.extractDate(fallbackRawDate);
+                    System.out.println("examDate formateado fallback: '" + examDate + "'");
+                }
+            }
+
+            if ((examDate == null || examDate.isBlank())) {
+                String sectionText = context.textForSection(section.startPage(), section.endPage());
+                Matcher dateMatcher = Pattern.compile("\\b\\d{2}/\\d{2}/\\d{4}\\b").matcher(sectionText);
+                if (dateMatcher.find()) {
+                    examDate = dateMatcher.group();
+                    System.out.println("examDate encontrado por regex: '" + examDate + "'");
+                }
             }
 
             if (examDate == null || examDate.isBlank()) {
@@ -85,22 +110,20 @@ public class OccupationalMedicineTextBusiness {
         Map<String, String> values = new LinkedHashMap<>();
 
         // ANTECEDENTES DE EXPOSICIÓN LABORAL
-        String exposicionText = subSections.get("ANTECEDENTES DE EXPOSICIÓN LABORAL");
+        String exposicionText = subSections.get("ANTECEDENTES DE EXPOSICION LABORAL");
+        if (exposicionText == null || exposicionText.isBlank())
+            exposicionText = subSections.get("ANTECEDENTES DE EXPOSICIÓN LABORAL");
         if (exposicionText != null && !exposicionText.isBlank()) {
-            String tiempoRaw = ocrFieldExtractor.extractAfterLabel(exposicionText, "Tiempo de Exposición");
-            String tiempo = ocrFieldExtractor.extractOnlyNumbers(tiempoRaw);
-            values.put("Tiempo de Exposición", tiempo);
-
-            System.out.println("  [Tiempo de Exposición] -> '" + tiempo + "'");
+            values.put("Tiempo de Exposición", ocrFieldExtractor.extractExposureTime(exposicionText));
         }
 
         // ACTIVIDAD FÍSICA
         String actividadText = subSections.get("ACTIVIDAD FÍSICA");
         if (actividadText != null && !actividadText.isBlank()) {
             values.put("Actividades Manuales",
-                    ocrFieldExtractor.extractAfterLabel(actividadText, "ACTIVIDADES MANUALES"));
+                ocrFieldExtractor.extractRowAnswer(actividadText, "ACTIVIDADES MANUALES"));
             values.put("Ejercicios o Deportes",
-                    ocrFieldExtractor.extractAfterLabel(actividadText, "EJERCICIOS O DEPORTES"));
+                ocrFieldExtractor.extractRowAnswer(actividadText, "EJERCICIOS O DEPORTES"));
 
             System.out.println("  [Actividades Manuales] -> '" + values.get("Actividades Manuales") + "'");
             System.out.println("  [Ejercicios o Deportes] -> '" + values.get("Ejercicios o Deportes") + "'");
@@ -110,9 +133,9 @@ public class OccupationalMedicineTextBusiness {
         String habitosText = subSections.get("HÁBITOS TÓXICOS");
         if (habitosText != null && !habitosText.isBlank()) {
             values.put("Consumidor de Alcohol",
-                    ocrFieldExtractor.extractAfterLabel(habitosText, "CONSUMIDOR DE ALCOHOL"));
+                    ocrFieldExtractor.extractRowAnswer(habitosText, "CONSUMIDOR DE ALCOHOL"));
             values.put("Fumador Actual",
-                    ocrFieldExtractor.extractAfterLabel(habitosText, "FUMADOR ACTUAL"));
+                    ocrFieldExtractor.extractRowAnswer(habitosText, "FUMADOR ACTUAL"));
 
             System.out.println("  [Consumidor de Alcohol] -> '" + values.get("Consumidor de Alcohol") + "'");
             System.out.println("  [Fumador Actual] -> '" + values.get("Fumador Actual") + "'");
@@ -125,115 +148,105 @@ public class OccupationalMedicineTextBusiness {
                     ocrFieldExtractor.extractAfterLabel(examenText, "Tension Arterial:"));
             values.put("Frecuencia Cardíaca",
                     ocrFieldExtractor.extractOnlyNumbers(
-                            ocrFieldExtractor.extractAfterLabel(examenText, "Frecuencia Cardiaca:")));
+                            ocrFieldExtractor.extractNumberAfterLabel(examenText, "Frecuencia Cardiaca:")));
             values.put("Frecuencia Respiratoria",
                     ocrFieldExtractor.extractOnlyNumbers(
-                            ocrFieldExtractor.extractAfterLabel(examenText, "Frecuencia Respiratoria:")));
+                            ocrFieldExtractor.extractNumberAfterLabel(examenText, "Frecuencia Respiratoria:")));
             values.put("Lateralidad Dominante",
                     ocrFieldExtractor.extractAfterLabel(examenText, "Lateralidad Dominante:"));
-            values.put("Perímetro Abdominal",
-                    ocrFieldExtractor.extractOnlyNumbers(
-                            ocrFieldExtractor.extractAfterLabel(examenText, "Perimetro Abdominal:")));
             values.put("Peso",
                     ocrFieldExtractor.extractOnlyNumbers(
-                            ocrFieldExtractor.extractAfterLabel(examenText, "Peso:")));
+                            ocrFieldExtractor.extractNumberAfterLabel(examenText, "Peso:")));
             values.put("Talla",
                     ocrFieldExtractor.extractOnlyNumbers(
-                            ocrFieldExtractor.extractAfterLabel(examenText, "Talla:")));
+                            ocrFieldExtractor.extractNumberAfterLabel(examenText, "Talla:")));
             values.put("IMC",
                     ocrFieldExtractor.extractAfterLabel(examenText, "IMC:"));
-
+            String perimetro = ocrFieldExtractor.extractOnlyNumbers(
+                    ocrFieldExtractor.extractAfterLabel(examenText, "Perimetro Abdominal:"));
+            if (!perimetro.isBlank()) values.put("Perímetro Abdominal", perimetro);
             System.out.println("  [Tensión Arterial]       -> '" + values.get("Tensión Arterial") + "'");
             System.out.println("  [Frecuencia Cardíaca]    -> '" + values.get("Frecuencia Cardíaca") + "'");
             System.out.println("  [Frecuencia Respiratoria]-> '" + values.get("Frecuencia Respiratoria") + "'");
             System.out.println("  [Lateralidad Dominante]  -> '" + values.get("Lateralidad Dominante") + "'");
-            System.out.println("  [Perímetro Abdominal]    -> '" + values.get("Perímetro Abdominal") + "'");
             System.out.println("  [Peso]                   -> '" + values.get("Peso") + "'");
             System.out.println("  [Talla]                  -> '" + values.get("Talla") + "'");
             System.out.println("  [IMC]                    -> '" + values.get("IMC") + "'");
+            System.out.println("  [Perímetro Abdominal]    -> '" + values.get("Perímetro Abdominal") + "'");
         }
 
         // CONCEPTO OCUPACIONAL
         String conceptoText = subSections.get("CONCEPTO OCUPACIONAL");
         if (conceptoText != null && !conceptoText.isBlank()) {
-            // El concepto es todo el bloque — no hay label interno, es el texto mismo
-            values.put("Concepto Ocupacional", conceptoText.trim());
-            System.out.println("  [Concepto Ocupacional] -> '" + conceptoText.trim() + "'");
+            values.put("Concepto Ocupacional",
+                    ocrFieldExtractor.extractOccupationalConcept(conceptoText));
         }
 
         // CÓDIGO / CUV
-        String codigoText = subSections.get("CÓDIGO");
+        String codigoText = subSections.get("CODIGO");
+        if (codigoText == null || codigoText.isBlank())
+            codigoText = subSections.get("CÓDIGO");
         if (codigoText != null && !codigoText.isBlank()) {
-            values.put("Nombre del Diagnóstico",
-                    ocrFieldExtractor.extractAfterLabel(codigoText, "Diagnósticos"));
-            values.put("Código de Examen",
-                    ocrFieldExtractor.extractAfterLabel(codigoText, "Código"));
-
-            System.out.println("  [Nombre del Diagnóstico] -> '" + values.get("Nombre del Diagnóstico") + "'");
-            System.out.println("  [Código de Examen]       -> '" + values.get("Código de Examen") + "'");
+            values.put("Código de Examen",   ocrFieldExtractor.extractDiagnosisCode(codigoText));
+            values.put("Nombre del Diagnóstico", ocrFieldExtractor.extractDiagnosisName(codigoText));
         }
 
         // REQUISITO SALUD
         String requisitoText = subSections.get("REQUISITO SALUD");
         if (requisitoText != null && !requisitoText.isBlank()) {
-
-            String rawHealth;
-
-            if (requisitoText.contains("SIN REQUISITOS DE SALUD")) {
-                // Extrae todo hasta "SIN REQUISITOS DE SALUD" (incluyéndolo)
-                int index = requisitoText.indexOf("SIN REQUISITOS DE SALUD");
-                rawHealth = requisitoText.substring(0, index + "SIN REQUISITOS DE SALUD".length());
-            } else {
-                // Lógica actual
-                rawHealth = ocrFieldExtractor.extractBetweenLabels(
-                        requisitoText,
-                        "Requisito Salud Cumple",
-                        "Restricciones Laborales"
-                );
-
-                // Si no encontró el recorte, usa el bloque completo
-                if (rawHealth.isBlank()) {
-                    rawHealth = requisitoText;
-                }
-            }
-
+            System.out.println("===== TEXTO OCR =====");
+            System.out.println(requisitoText);
+            System.out.println("=====================");
+            String rawHealth = ocrFieldExtractor.extractHealthRequirements(requisitoText);
+            System.out.println("===== RAW HEALTH =====");
+            System.out.println(rawHealth);
+            System.out.println("======================");
             values.put("Requisitos de Salud", healthRequirementMapper.parseToJson(rawHealth));
-            System.out.println("  [Requisitos de Salud] -> '" + values.get("Requisitos de Salud") + "'");
         }
+
         return values;
     }
 
     // Los títulos en mayúsculas — OcrSubSectionExtractor los busca con toUpperCase()
     private static final Set<String> SUB_SECTION_TITLES = Set.of(
             "DATOS PERSONALES",
-            "Motivo Consulta",
-            "Elementos de Protección Personal (En la última labor o labor actual)",
             "Antecedentes de Exposición Laboral (El primero corresponde a la última labor o labor actual)",
+            "ANTECEDENTES DE EXPOSICION LABORAL",
+            "Motivo Consulta",
             "MOTIVO CONSULTA",
-            "ANTECEDENTES DE EXPOSICIÓN LABORAL",
             "ANTECEDENTES FAMILIARES",
             "ANTECEDENTES PERSONALES",
             "Antecedentes Personales por Sistemas",
-            "Observaciones Adicionales a los Antecedente",
-            "Revisión Por Sistemas",
             "ANTECEDENTES PERSONALES POR SISTEMAS",
-            "REVISIÓN POR SISTEMAS",
-            "ACTIVIDAD FÍSICA",
-            "HÁBITOS TÓXICOS",
-            "Examen Fisico",
-            "Ampliación de los Hallazgos",
-            "EXAMEN FISICO",
-            "AMPLIACIÓN DE LOS HALLAZGOS",
-            "CONSULTAS REALIZADOS",
-            "EXÁMENES REALIZADOS",
-            "LABORATORIOS REALIZADOS",
-            "Observaciones de los Exámenes Paraclínicos y/o Procedimientos Realizados en Ésta Atención",
-            "Código",
-            "Ánalisis y Plan de Tratamiento",
-            "Concepto Ocupacional",
             "Requisito Salud",
-            "CÓDIGO",
+            "REQUISITO SALUD",
+            "Concepto Ocupacional",
             "CONCEPTO OCUPACIONAL",
-            "REQUISITO SALUD"
+            "Revisión Por Sistemas",
+            "REVISIÓN POR SISTEMAS",
+            "REVISION POR SISTEMAS",
+            "Examen Fisico",
+            "EXAMEN FISICO",
+            "ACTIVIDAD FÍSICA",
+            "ACTIVIDAD FISICA",
+            "HÁBITOS TÓXICOS",
+            "HABITOS TOXICOS",
+            "Código",
+            "CÓDIGO",
+            "CODIGO"
+            // "ELEMENTOS DE PROTECCION PERSONAL",
+            // "Elementos de Protección Personal (En la última labor o labor actual)",
+            // "OBSERVACIONES ADICIONALES A LOS ANTECEDENTES",
+            // "Observaciones Adicionales a los Antecedente"
+            // "CONSULTAS REALIZADOS",
+            // "LABORATORIOS REALIZADOS",
+            // "Observaciones de los Exámenes Paraclínicos y/o Procedimientos Realizados en Ésta Atención",
+            // "EXÁMENES REALIZADOS",
+            // "EXAMENES REALIZADOS",
+            // "Ánalisis y Plan de Tratamiento",
+            // "ANALISIS Y PLAN DE TRATAMIENTO",
+            // "Ampliación de los Hallazgos",
+            // "AMPLIACIÓN DE LOS HALLAZGOS",
+            // "AMPLIACION DE LOS HALLAZGOS",
     );
 }

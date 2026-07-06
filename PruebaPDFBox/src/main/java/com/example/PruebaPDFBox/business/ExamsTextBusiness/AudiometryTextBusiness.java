@@ -39,30 +39,38 @@ public class AudiometryTextBusiness {
                     context, section, SUB_SECTION_TITLES
             );
 
+            subSections.replaceAll((k, v) -> ocrFieldExtractor.normalizeForExtraction(v));
+
             System.out.println("\n=== AUDIOMETRY - SubSecciones encontradas ===");
             subSections.forEach((k, v) -> System.out.println(
                     "  [" + k + "] -> " + (v != null && !v.isBlank() ? "✅" : "❌ VACÍO")
             ));
 
             // Fecha — busca en DATOS PERSONALES, si no existe busca en el texto completo
-            String examDate = null;
             String datosPersonales = subSections.get("DATOS PERSONALES");
+            String examDate = null;
 
             if (datosPersonales != null && !datosPersonales.isBlank()) {
                 String rawDate = ocrFieldExtractor.extractBetweenLabels(datosPersonales, "Fecha:", "Ciudad:");
-                if (rawDate.isBlank()) {
-                    rawDate = ocrFieldExtractor.extractAfterLabel(datosPersonales, "Fecha:");
-                }
                 System.out.println("rawDate encontrado: '" + rawDate + "'");
                 examDate = ocrFieldExtractor.extractDate(rawDate);
+                System.out.println("examDate formateado: '" + examDate + "'");
+
+                if (examDate == null || examDate.isBlank()) {
+                    // Fallback: try without punctuation labels (OCR may drop ':')
+                    rawDate = ocrFieldExtractor.extractBetweenLabels(datosPersonales, "Fecha", "Ciudad");
+                    System.out.println("rawDate fallback (sin ':') encontrado: '" + rawDate + "'");
+                    examDate = ocrFieldExtractor.extractDate(rawDate);
+                    System.out.println("examDate fallback formateado: '" + examDate + "'");
+                }
             }
 
-            // Fallback: buscar fecha en el texto completo de la sección
+            // If still missing, try to find any date pattern in the whole section text
             if (examDate == null || examDate.isBlank()) {
-                String fullText = context.textForSection(section.startPage(), section.endPage());
-                String rawDate = ocrFieldExtractor.extractAfterLabel(fullText, "Fecha:");
-                examDate = ocrFieldExtractor.extractDate(rawDate);
-                System.out.println("examDate (fallback) formateado: '" + examDate + "'");
+                String fullSection = context.textForSection(section.startPage(), section.endPage());
+                System.out.println("Intentando extraer fecha desde texto completo de la sección...");
+                examDate = ocrFieldExtractor.extractDate(fullSection);
+                System.out.println("Fecha encontrada en texto completo: '" + examDate + "'");
             }
 
             if (examDate == null || examDate.isBlank()) {
@@ -88,7 +96,7 @@ public class AudiometryTextBusiness {
             return true;
 
         } catch (Exception e) {
-            System.err.println("❌ ERROR en AudiometryTextBusiness: " + e.getMessage());
+            System.err.println("ERROR en AudiometryTextBusiness: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
