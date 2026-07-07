@@ -143,29 +143,33 @@ public class WorkerExamBusiness {
     }
 
     private String extractEstadoCivil(String text) {
-        String raw = ocrFieldExtractor.extractAfterLabel(text, "Estado Civil:");
-        if (raw.isBlank()) return "";
 
-        // Corta en el siguiente label conocido
-        String[] stops = {"Nivel Educativo", "E.P.S", "A.F.P", "A.R.L", "Tipo de Sangre"};
-        return truncate(cutAtFirstStop(raw, stops), 80);
+        Pattern p = Pattern.compile(
+            "Estado\\s+Civil:\\s*(.*?)\\s+Nivel\\s+Educativo:",
+            Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+
+        Matcher m = p.matcher(text);
+
+        if (m.find()) {
+            return truncate(m.group(1).trim(), 80);
+        }
+
+        return "";
     }
 
     private String extractNivelEducativo(String text) {
-        String raw = ocrFieldExtractor.extractAfterLabel(text, "Nivel Educativo:");
-        if (raw.isBlank()) return "";
 
-        String[] stops = {"E.P.S", "A.F.P", "A.R.L", "Tipo de Sangre", "Jornada", "Cargo"};
-        return truncate(cutAtFirstStop(raw, stops), 100);
-    }
+        Pattern p = Pattern.compile(
+            "Nivel\\s+Educativo:\\s*(.*?)\\s+E\\.P\\.S:",
+            Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
 
-    private String cutAtFirstStop(String value, String[] stops) {
-        String result = value.trim().split("\\r?\\n")[0].trim();
-        for (String stop : stops) {
-            int idx = result.toUpperCase().indexOf(stop.toUpperCase());
-            if (idx > 0) result = result.substring(0, idx).trim();
+        Matcher m = p.matcher(text);
+
+        if (m.find()) {
+            return truncate(m.group(1).trim(), 100);
         }
-        return result;
+
+        return "";
     }
 
     private String truncate(String value, int maxLength) {

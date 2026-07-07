@@ -153,7 +153,7 @@ public class OccupationalMedicineTextBusiness {
                     ocrFieldExtractor.extractOnlyNumbers(
                             ocrFieldExtractor.extractNumberAfterLabel(examenText, "Frecuencia Respiratoria:")));
             values.put("Lateralidad Dominante",
-                    ocrFieldExtractor.extractAfterLabel(examenText, "Lateralidad Dominante:"));
+                    ocrFieldExtractor.extractLateralidad(examenText));
             values.put("Peso",
                     ocrFieldExtractor.extractOnlyNumbers(
                             ocrFieldExtractor.extractNumberAfterLabel(examenText, "Peso:")));
@@ -162,9 +162,8 @@ public class OccupationalMedicineTextBusiness {
                             ocrFieldExtractor.extractNumberAfterLabel(examenText, "Talla:")));
             values.put("IMC",
                     ocrFieldExtractor.extractAfterLabel(examenText, "IMC:"));
-            String perimetro = ocrFieldExtractor.extractOnlyNumbers(
-                    ocrFieldExtractor.extractAfterLabel(examenText, "Perimetro Abdominal:"));
-            if (!perimetro.isBlank()) values.put("Perímetro Abdominal", perimetro);
+            String perimetro = ocrFieldExtractor.extractPerimetroAbdominal(examenText);
+            if (!perimetro.isBlank()) {values.put("Perímetro Abdominal", perimetro);}
             System.out.println("  [Tensión Arterial]       -> '" + values.get("Tensión Arterial") + "'");
             System.out.println("  [Frecuencia Cardíaca]    -> '" + values.get("Frecuencia Cardíaca") + "'");
             System.out.println("  [Frecuencia Respiratoria]-> '" + values.get("Frecuencia Respiratoria") + "'");

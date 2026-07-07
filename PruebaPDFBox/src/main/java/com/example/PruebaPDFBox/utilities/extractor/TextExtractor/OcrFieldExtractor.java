@@ -1,9 +1,12 @@
 package com.example.PruebaPDFBox.utilities.extractor.TextExtractor;
 
-import org.springframework.stereotype.Component;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import java.util.*;
-import java.util.regex.*;
+import org.springframework.stereotype.Component;
 
 @Component
 public class OcrFieldExtractor {
@@ -12,19 +15,26 @@ public class OcrFieldExtractor {
 
         if (text == null || label == null)
             return "";
-        
+
         int start = text.toUpperCase().indexOf(label.toUpperCase());
-        
+
+        System.out.println("Buscando label: " + label);
+        System.out.println("start = " + start);
+
         if (start == -1)
             return "";
 
         start += label.length();
 
         String rest = text.substring(start);
+
+        System.out.println("REST = [" + rest.substring(0, Math.min(150, rest.length())) + "]");
+
         Pattern nextLabel = Pattern.compile("\\s+[A-Za-zÁÉÍÓÚÑÜ()/. ]{2,50}:");
         Matcher matcher = nextLabel.matcher(rest);
 
         if (matcher.find()) {
+            System.out.println("NEXT LABEL = [" + matcher.group() + "]");
             return rest.substring(0, matcher.start()).trim();
         }
 
@@ -131,13 +141,35 @@ public class OcrFieldExtractor {
 
     public String extractDiagnosisCode(String text){
 
-        Matcher m = Pattern.compile("\\b([A-Z]\\d{3})\\b")
+        if(text==null)
+            return "";
+
+        Matcher m = Pattern.compile(
+                "\\b([A-Z][0-9]{3,4})\\b")
                 .matcher(text);
 
         return m.find()
                 ? m.group(1)
                 : "";
     }
+
+    // public String extractDiagnosisName(String text){
+
+    //     if(text==null)
+    //         return "";
+
+    //     Matcher m = Pattern.compile(
+    //             "\\b[A-Z][0-9]{3,4}\\b\\s+(.+?)\\s+(AMBOS|DERECHO|IZQUIERDO)",
+    //             Pattern.CASE_INSENSITIVE | Pattern.DOTALL)
+    //             .matcher(text);
+
+    //     if(!m.find())
+    //         return "";
+
+    //     return m.group(1)
+    //             .replaceAll("\\s+"," ")
+    //             .trim();
+    // }
 
     public String extractDiagnosisName(String text){
 
@@ -197,6 +229,78 @@ public class OcrFieldExtractor {
 
         return normalized;
     }
+
+    public String extractEarResult(String text, String label) {
+        if (text == null || label == null) return "";
+
+        // Normaliza ambos para encontrar la posición
+        String normalizedText  = normalize(text);
+        String normalizedLabel = normalize(label);
+
+        int start = normalizedText.indexOf(normalizedLabel);
+        if (start == -1) return "";
+
+        start += normalizedLabel.length();
+
+        // Busca el diagnóstico directamente en el texto normalizado
+        // (evita el problema de índices al mezclar normalizado con original)
+        String rest = normalizedText.substring(start);
+
+        Matcher matcher = Pattern.compile(
+                "\\b(NORMAL|ANORMAL|ALTERADO|CERUMEN|PERFORADO|TAPONADO|INTEGRO|INTEGRA)\\b"
+        ).matcher(rest);
+
+        return matcher.find() ? matcher.group(1) : "";
+    }
+
+    public String extractLateralidad(String text) {
+        Pattern p = Pattern.compile(
+            "Lateralidad\\s+Dominante:\\s*(.*?)\\s+Peso:",
+            Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+
+        Matcher m = p.matcher(text);
+
+        return m.find() ? m.group(1).trim() : "";
+    }
+
+    public String extractPerimetroAbdominal(String text) {
+        Pattern p = Pattern.compile(
+            "Perimetro\\s+Abdominal:\\s*(.*?)\\s+Interpretacion:",
+            Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+
+        Matcher m = p.matcher(text);
+
+        if (m.find()) {
+            return extractOnlyNumbers(m.group(1));
+        }
+
+        return "";
+    }
+
+    public String extractAudiometryObservations(String text) {
+        if (text == null || text.isBlank()) return "";
+
+        // Corta todo lo que venga después de la firma
+        String cleaned = text
+                .replaceAll("(?is)(FONOAUDI[ÓO]LOGO|FIRMA:|R\\.M\\.|IMPRESO EL|CC:\\s*\\d).*", "")
+                // Elimina líneas que son solo números (ruido de tabla audiométrica)
+                .replaceAll("(?m)^\\s*[\\d\\s|()\\[\\]<>xX-]{1,30}\\s*$\\n?", "")
+                // Elimina líneas de una sola letra o símbolo
+                .replaceAll("(?m)^\\s*[a-zA-Z]\\s*$\\n?", "")
+                // Elimina caracteres gráficos de tabla
+                .replaceAll("[|()\\[\\]<>]", " ")
+                .replaceAll("[ \\t]{2,}", " ")
+                .replaceAll("\\n{3,}", "\n\n")
+                .trim();
+
+        // Elimina líneas con menos de 5 letras reales (ruido OCR)
+        String result = Arrays.stream(cleaned.split("\\r?\\n"))
+                .filter(line -> line.replaceAll("[^A-Za-zÁÉÍÓÚáéíóúÑñ]", "").length() >= 5)
+                .collect(java.util.stream.Collectors.joining("\n"));
+
+        return result.trim();
+    }
+
 
     public String extractNumberAfterLabel(String text, String label) {
 

@@ -19,7 +19,7 @@ public class MorphologyStudyMapper extends GenericJsonMapper<MorphologyStudyDto>
         String[] lines = rawText.split("\\r?\\n");
 
         for (String line : lines) {
-            MorphologyStudyDto dto = parseLine(line);
+            MorphologyStudyDto dto = parseLine(line);   
             if (dto != null) {
                 result.add(dto);
             }

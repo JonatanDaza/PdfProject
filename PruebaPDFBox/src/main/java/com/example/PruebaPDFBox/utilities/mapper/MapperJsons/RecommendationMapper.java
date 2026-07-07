@@ -16,25 +16,24 @@ public class RecommendationMapper extends GenericJsonMapper<RecommendationDto> {
     public String parseToJson(String rawText) {
         if (isNullOrEmpty(rawText)) return "[]";
 
-        // Separar por líneas y unir con " / "
-        String combinedText = Arrays.stream(rawText.split("\\r?\\n"))
-            .map(String::trim)
-            .filter(line -> !line.isEmpty())
-            .collect(Collectors.joining(" / "));
+        String cleaned = cleanRaw(rawText)
+                .replaceAll("(?i)^RECOMENDACION\\s*OBSERVACION", "")
+                .replaceAll("(?i)^OBSERVACION", "")
+                .replaceAll("[\\[\\]()]", "");
 
-        if (combinedText.isEmpty()) {
-            return "[]";
-        }
+        String combinedText = Arrays.stream(cleaned.split("\\r?\\n"))
+                .map(String::trim)
+                .filter(line -> !line.isEmpty())
+                .filter(line -> !line.matches("(?i)RECOMENDACION|OBSERVACION"))
+                .collect(Collectors.joining(" / "));
 
-        // Crear un solo objeto con todas las recomendaciones separadas
+        if (combinedText.isEmpty()) return "[]";
+
         RecommendationDto dto = new RecommendationDto();
         dto.setRecommendationText(combinedText);
 
-        List<RecommendationDto> result = new ArrayList<>();
-        result.add(dto);
-
-        return toJson(result);
-    }
+        return toJson(List.of(dto));
+}
 
     @Override
     protected RecommendationDto parseLine(String line) {
@@ -46,5 +45,14 @@ public class RecommendationMapper extends GenericJsonMapper<RecommendationDto> {
     @Override
     protected TypeReference<List<RecommendationDto>> getTypeReference() {
         return new TypeReference<>() {};
+    }
+
+    private String cleanRaw(String rawText) {
+        return rawText
+                .replaceAll("(?m)^\\s*[Oo0a]{1,3}\\s*$", "")   // ruido OCR
+                .replaceAll("[\\[\\]()|]", "")                // símbolos basura
+                .replaceAll("\\s{2,}", " ")                   // espacios múltiples
+                .replaceAll("\\n{2,}", "\n")
+                .trim();
     }
 }

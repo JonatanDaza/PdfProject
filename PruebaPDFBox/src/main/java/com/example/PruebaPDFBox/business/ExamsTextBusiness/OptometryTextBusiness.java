@@ -104,15 +104,12 @@ public class OptometryTextBusiness {
         Map<String, String> values = new LinkedHashMap<>();
 
         // CÓDIGO / CUV
-        String codigoText = subSections.get("CÓDIGO");
+        String codigoText = subSections.get("CODIGO");
+        if (codigoText == null || codigoText.isBlank())
+            codigoText = subSections.get("CÓDIGO");
         if (codigoText != null && !codigoText.isBlank()) {
-            values.put("Nombre del Diagnóstico",
-                    ocrFieldExtractor.extractDiagnosisName(codigoText));
-            values.put("Código de Examen",
-                    ocrFieldExtractor.extractDiagnosisCode(codigoText));
-
-            System.out.println("  [Nombre del Diagnóstico] -> '" + values.get("Nombre del Diagnóstico") + "'");
-            System.out.println("  [Código de Examen]       -> '" + values.get("Código de Examen") + "'");
+            values.put("Código de Examen",   ocrFieldExtractor.extractDiagnosisCode(codigoText));
+            values.put("Nombre del Diagnóstico", ocrFieldExtractor.extractDiagnosisName(codigoText));
         }
 
         // CONDUCTA Y/O RECOMENDACIONES

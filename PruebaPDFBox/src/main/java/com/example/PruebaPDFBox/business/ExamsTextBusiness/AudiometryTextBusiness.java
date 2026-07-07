@@ -13,10 +13,14 @@ import com.example.PruebaPDFBox.utilities.extractor.TextExtractor.OcrFieldExtrac
 import com.example.PruebaPDFBox.utilities.mapper.MapperJsons.ObservationsMapper;
 import com.example.PruebaPDFBox.utilities.mapper.MapperJsons.RecommendationMapper;
 import com.example.PruebaPDFBox.utilities.mapper.MapperJsons.WeightedDecibelsMapper;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Component;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Component
 @RequiredArgsConstructor
@@ -108,64 +112,88 @@ public class AudiometryTextBusiness {
         // OTOSCOPIA
         String otoscopiaText = subSections.get("OTOSCOPIA");
         if (otoscopiaText != null && !otoscopiaText.isBlank()) {
-            values.put("Oído derecho",
-                    ocrFieldExtractor.extractAfterLabel(otoscopiaText, "Oído derecho:"));
-            values.put("Oído izquierdo",
-                    ocrFieldExtractor.extractAfterLabel(otoscopiaText, "Oído izquierdo:"));
-
-            System.out.println("  [Oído derecho]   -> '" + values.get("Oído derecho") + "'");
-            System.out.println("  [Oído izquierdo] -> '" + values.get("Oído izquierdo") + "'");
+            values.put("Oído derecho", ocrFieldExtractor.extractEarResult(otoscopiaText, "Oído derecho:"));
+            values.put("Oído izquierdo", ocrFieldExtractor.extractEarResult(otoscopiaText, "Oido izquierdo:"));
         }
 
         // DB(A) — todo el bloque entre "dB(A)" y "SEVERIDAD"
         String dbText = subSections.get("DB(A)");
+        if (dbText == null || dbText.isBlank()) dbText = subSections.get("dB(A)");
         if (dbText != null && !dbText.isBlank()) {
-            String rawDB = ocrFieldExtractor.extractBetweenLabels(dbText, "dB(A)", "SEVERIDAD");
-            if (rawDB.isBlank()) rawDB = dbText;
+            String vaodLine = extractVaLine(dbText, "VAOD");
+            String vaoiLine = extractVaLine(dbText, "VAOI");
 
-            String parsed = weightedDecibelsMapper.parseToJson(rawDB);
-            values.put("Ponderado Decibelios", parsed);
-
-            System.out.println("  [Ponderado Decibelios] -> '" + parsed + "'");
+            if (!vaodLine.isBlank() || !vaoiLine.isBlank()) {
+                // Construye el texto en formato que WeightedDecibelsMapper puede procesar
+                String formattedDb = (vaodLine.isBlank() ? "" : "VAOD " + vaodLine + "\n")
+                                + (vaoiLine.isBlank() ? "" : "VAOI " + vaoiLine);
+                values.put("Ponderado Decibelios", weightedDecibelsMapper.parseToJson(formattedDb));
+            } else {
+                // Fallback: pasa el bloque completo limpio
+                String cleanDb = dbText
+                        .replaceAll("(?m)^\\s*-?\\d+\\s*$", "")
+                        .replaceAll("[|()\\[\\]<>xX]", " ")
+                        .replaceAll("[ \\t]{2,}", " ")
+                        .trim();
+                values.put("Ponderado Decibelios", weightedDecibelsMapper.parseToJson(cleanDb));
+            }
+            System.out.println("  [Ponderado Decibelios] -> '" + values.get("Ponderado Decibelios") + "'");
         }
 
         // CÓDIGO / CUV
-        String codigoText = subSections.get("CÓDIGO");
+        String codigoText = subSections.get("CODIGO");
+        if (codigoText == null || codigoText.isBlank())
+            codigoText = subSections.get("CÓDIGO");
         if (codigoText != null && !codigoText.isBlank()) {
-            values.put("Nombre del Diagnóstico",
-                    ocrFieldExtractor.extractAfterLabel(codigoText, "Nombre del Diagnóstico"));
-            values.put("Código de Examen",
-                    ocrFieldExtractor.extractAfterLabel(codigoText, "Código"));
-
-            System.out.println("  [Nombre del Diagnóstico] -> '" + values.get("Nombre del Diagnóstico") + "'");
-            System.out.println("  [Código de Examen]       -> '" + values.get("Código de Examen") + "'");
+            values.put("Código de Examen",   ocrFieldExtractor.extractDiagnosisCode(codigoText));
+            values.put("Nombre del Diagnóstico", ocrFieldExtractor.extractDiagnosisName(codigoText));
         }
 
         // RECOMENDACION
         String recomText = subSections.get("RECOMENDACION");
         if (recomText != null && !recomText.isBlank()) {
-            String rawRec = ocrFieldExtractor.extractBetweenLabels(recomText, "OBSERVACION", "Observaciones");
-            if (rawRec.isBlank()) rawRec = recomText;
+            String rawRec = recomText;
 
-            String parsed = recommendationMapper.parseToJson(rawRec);
+            rawRec = rawRec.replaceFirst(
+                    "(?i)^RECOMENDACION\\s*OBSERVACION",
+                    "");
+
+            rawRec = rawRec.replaceAll(
+                    "(?m)^\\d+\\s*\\.?$",
+                    "");
+
+            rawRec = rawRec.trim();
+
+            String parsed =
+                    recommendationMapper.parseToJson(rawRec);
+
             values.put("Recomendaciones", parsed);
-
-            System.out.println("  [Recomendaciones] -> '" + parsed + "'");
         }
 
         // OBSERVACIONES
         String obsText = subSections.get("OBSERVACIONES");
+        if (obsText == null || obsText.isBlank()) obsText = subSections.get("Observaciones");
         if (obsText != null && !obsText.isBlank()) {
-            String rawObs = ocrFieldExtractor.extractBetweenLabels(obsText, "Observaciones", "FONOAUDIÓLOGO");
-            if (rawObs.isBlank()) rawObs = obsText;
-
-            String parsed = observationsMapper.parseToJson(rawObs);
-            values.put("Observaciones", parsed);
-
-            System.out.println("  [Observaciones] -> '" + parsed + "'");
+            String rawObs = ocrFieldExtractor.extractAudiometryObservations(obsText);
+            if (!rawObs.isBlank()) {
+                values.put("Observaciones", observationsMapper.parseToJson(rawObs));
+                System.out.println("  [Observaciones] -> '" + values.get("Observaciones") + "'");
+            }
         }
 
         return values;
+    }
+
+    private String extractVaLine(String text, String vaLabel) {
+        Pattern p = Pattern.compile(
+                "(?i)" + vaLabel + "\\s+([\\d\\s]+)",
+                Pattern.CASE_INSENSITIVE
+        );
+        Matcher m = p.matcher(text);
+        if (m.find()) {
+            return m.group(1).trim().replaceAll("\\s+", " ");
+        }
+        return "";
     }
 
     private static final Set<String> SUB_SECTION_TITLES = Set.of(
@@ -176,10 +204,14 @@ public class AudiometryTextBusiness {
             "CONDICIONES DE TOMA DE LA PRUEBA",
             "OTOSCOPIA",
             "DB(A)",
+            "dB(A)",
         //     "EVERIDAD - CAOHC",
             "SEVERIDAD - CAOHC",
             "CÓDIGO",
+            "Código",
             "RECOMENDACION",
-            "OBSERVACIONES"
+            "RECOMENDACION OBSERVACION",
+            "OBSERVACIONES",
+            "Observaciones"
     );
 }

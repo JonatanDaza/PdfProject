@@ -1,15 +1,18 @@
 package com.example.PruebaPDFBox.utilities.mapper.MapperJsons;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+
 import org.springframework.stereotype.Component;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Component
 public class WeightedDecibelsMapper extends GenericJsonMapper<Map<String, String>> {
 
-    private static final List<String> FREQUENCIES = Arrays.asList("250", "500", "1000", "2000", "3000", "4000", "6000", "8000");
+    public static final List<String> FREQUENCIES = Arrays.asList("250", "500", "1000", "2000", "3000", "4000", "6000", "8000");
 
     @Override
     public String parseToJson(String rawText) {
@@ -28,7 +31,7 @@ public class WeightedDecibelsMapper extends GenericJsonMapper<Map<String, String
         int vaoiIndex = upperText.indexOf("VAOI");
 
         if (vaodIndex == -1 || vaoiIndex == -1) {
-            return null;
+            return buildFallback(rawText);
         }
 
         // Extraer los valores de VAOD (entre VAOD y VAOI)
@@ -40,7 +43,7 @@ public class WeightedDecibelsMapper extends GenericJsonMapper<Map<String, String
         List<String> vaoiValues = extractNumericValues(vaoiSection);
 
         // Verificar que tengamos exactamente 8 valores para cada uno
-        if (vaodValues.size() != 8 || vaoiValues.size() != 8) {
+        if (vaodValues.size() < 8 || vaoiValues.size() < 8) {
             return null;
         }
 
@@ -61,15 +64,29 @@ public class WeightedDecibelsMapper extends GenericJsonMapper<Map<String, String
     }
 
     private List<String> extractNumericValues(String text) {
-        if (text == null || text.trim().isEmpty()) {
-            return new ArrayList<>();
+
+        List<String> values = new ArrayList<>();
+
+        Matcher matcher = Pattern.compile("\\b\\d+\\b").matcher(text);
+
+        while (matcher.find()) {
+
+            String value = matcher.group();
+
+            // Ignorar las frecuencias del encabezado
+            if (FREQUENCIES.contains(value)) {
+                continue;
+            }
+
+            values.add(value);
+
+            // Solo tomar los primeros 8 valores
+            if (values.size() == 8) {
+                break;
+            }
         }
 
-        return Arrays.stream(text.split("\\s+"))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty() && s.matches("\\d+"))
-                .filter(s -> !FREQUENCIES.contains(s)) // Excluir frecuencias
-                .collect(Collectors.toList());
+        return values;
     }
 
     @Override
@@ -80,5 +97,26 @@ public class WeightedDecibelsMapper extends GenericJsonMapper<Map<String, String
     @Override
     protected TypeReference<List<Map<String, String>>> getTypeReference() {
         return new TypeReference<>() {};
+    }
+
+    private List<Map<String, String>> buildFallback(String rawText) {
+
+        List<String> numbers = Arrays.stream(rawText.split("\\s+"))
+                .filter(s -> s.matches("\\d+"))
+                .collect(Collectors.toList());
+
+        if (numbers.size() < 16) return null;
+
+        Map<String, String> map = new LinkedHashMap<>();
+
+        for (int i = 0; i < Math.min(8, numbers.size()); i++) {
+            map.put("VAOD" + FREQUENCIES.get(i), numbers.get(i));
+        }
+
+        for (int i = 0; i < Math.min(8, numbers.size() - 8); i++) {
+            map.put("VAOI" + FREQUENCIES.get(i), numbers.get(i + 8));
+        }
+
+        return List.of(map);
     }
 }
