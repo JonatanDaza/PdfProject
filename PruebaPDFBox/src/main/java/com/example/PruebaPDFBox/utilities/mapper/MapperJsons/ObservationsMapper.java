@@ -13,6 +13,19 @@ import java.util.stream.Collectors;
 public class ObservationsMapper extends GenericJsonMapper<ObservationsDto> {
 
     @Override
+    protected ObservationsDto parseLine(String line) {
+        ObservationsDto dto = new ObservationsDto();
+        dto.setObservationText(line);
+        return dto;
+    }
+
+    @Override
+    protected TypeReference<List<ObservationsDto>> getTypeReference() {
+        return new TypeReference<>() {};
+    }
+
+
+    @Override
     public String parseToJson(String rawText) {
         if (isNullOrEmpty(rawText)) return "[]";
 
@@ -25,25 +38,19 @@ public class ObservationsMapper extends GenericJsonMapper<ObservationsDto> {
                 .filter(line -> line.replaceAll("[^A-Za-zÁÉÍÓÚáéíóúÑñ]", "").length() >= 5)
                 .toList();
 
-        // Deduplicar ANTES de fixOcrErrors — compara texto crudo normalizado
-        List<String> deduped = new ArrayList<>();
-        for (String line : lines) {
-            String normCurr = line.replaceAll("[^A-Za-z0-9]", "").toUpperCase();
-            boolean isDuplicate = deduped.stream().anyMatch(prev -> {
-                String normPrev = prev.replaceAll("[^A-Za-z0-9]", "").toUpperCase();
-                return normPrev.equals(normCurr)
-                        || normPrev.contains(normCurr)
-                        || normCurr.contains(normPrev);
-            });
-            if (!isDuplicate) deduped.add(line);
-        }
+        // Deduplica ANTES de fixOcrErrors (texto crudo)
+        List<String> deduped = deduplicate(lines);
 
-        // Aplica correcciones OCR DESPUÉS de deduplicar
+        // Aplica correcciones OCR
         List<String> fixed = deduped.stream()
                 .map(this::fixOcrErrors)
                 .toList();
 
-        String combinedText = String.join(" \n", fixed);
+        // Deduplica DE NUEVO después de fixOcrErrors
+        // (líneas distintas antes pueden ser iguales después de corregir tildes/errores)
+        List<String> dedupedFixed = deduplicate(fixed);
+
+        String combinedText = String.join(" \n", dedupedFixed);
         if (combinedText.isEmpty()) return "[]";
 
         ObservationsDto dto = new ObservationsDto();
@@ -51,52 +58,43 @@ public class ObservationsMapper extends GenericJsonMapper<ObservationsDto> {
         return toJson(List.of(dto));
     }
 
-    @Override
-    protected ObservationsDto parseLine(String line) {
-        ObservationsDto dto = new ObservationsDto();
-        dto.setObservationText(line);
-        return dto;
+    private List<String> deduplicate(List<String> lines) {
+        List<String> result = new ArrayList<>();
+        for (String line : lines) {
+            String normCurr = normalize(line);
+            boolean isDuplicate = result.stream()
+                    .anyMatch(prev -> {
+                        String normPrev = normalize(prev);
+                        return normPrev.equals(normCurr)
+                                || normPrev.contains(normCurr)
+                                || normCurr.contains(normPrev);
+                    });
+            if (!isDuplicate) result.add(line);
+        }
+        return result;
     }
 
-    @Override
-    protected TypeReference<List<ObservationsDto>> getTypeReference() {
-        return new TypeReference<>() {};
+    private String normalize(String text) {
+        return text.replaceAll("[^A-Za-z0-9]", "").toUpperCase();
     }
 
     private boolean isOcrNoise(String line) {
+        String clean = line.replaceAll("[^A-Za-zÁÉÍÓÚáéíóúÑñ]", "").toLowerCase();
 
-    String clean = line
-            .replaceAll("[^A-Za-zÁÉÍÓÚáéíóúÑñ]", "")
-            .toLowerCase();
+        if (clean.isEmpty()) return true;
 
-        if (clean.isEmpty()) {
-            return true;
-        }
-
-        // líneas OCR basura
         List<String> noise = List.of(
-                "oo",
-                "ooo",
-                "ee",
-                "eee",
-                "eeo",
-                "ob",
-                "bn",
-                "a",
-                "e"
+                "oo", "ooo", "oooo", "ee", "eee", "eeo", "ob", "bn",
+                "a", "e", "i", "le", "oetho", "oethe", "oethe"
         );
+        if (noise.contains(clean)) return true;
 
-        if (noise.contains(clean)) {
-            return true;
-        }
+        if (clean.matches("(.)\\1{2,}")) return true;
 
-        // muchas letras repetidas: eeee, oooo, bbbb
-        if (clean.matches("(.)\\1{2,}")) {
-            return true;
-        }
+        // Detecta basura tipo "OE THe" — muy pocas letras reales sin sentido
+        if (clean.length() <= 5 && !clean.matches(".*(normal|bilateral|auditiv|umbrales).*")) return true;
 
-        // demasiadas letras pequeñas sin palabras reales
-        return clean.length() <= 3;
+        return false;
     }
 
     private String cleanRaw(String rawText) {
@@ -104,6 +102,10 @@ public class ObservationsMapper extends GenericJsonMapper<ObservationsDto> {
                 .replaceAll("(?i)FONOAUDI[ÓO]LOGO.*", "")
                 .replaceAll("(?i)FIRMA.*", "")
                 .replaceAll("(?i)CODIGO DE SEGURIDAD.*", "")
+                .replaceAll("(?i)IMPRESO EL.*", "")
+                .replaceAll("(?i)R\\.M\\..*", "")
+                .replaceAll("(?m)^\\s*[oe_\\-]{1,6}\\s*$\\n?", "")
+                .replaceAll("(?m)^\\s*oo\\s*oo.*$\\n?", "")
                 .replaceAll("[\\[\\]()|]", "")
                 .replaceAll("[ \\t]{2,}", " ")
                 .replaceAll("\\n{3,}", "\n\n")
@@ -111,16 +113,18 @@ public class ObservationsMapper extends GenericJsonMapper<ObservationsDto> {
     }
 
     private String fixOcrErrors(String text) {
-
         return text
-                .replace("RIL ATERAIL", "BILATERAL")
-                .replace("RILATERAL", "BILATERAL")
+                .replaceAll("(?i)R[IL]{1,2}\\s*ATERAIL", "BILATERAL")
+                .replaceAll("(?i)RILATERAL", "BILATERAL")
+                .replaceAll("(?i)\\bDTA\\b", "PTA")
                 .replace("AUDICION", "AUDICIÓN")
                 .replace("PARAMETROS", "PARÁMETROS")
                 .replace("CONSERVACION", "CONSERVACIÓN")
+                .replace("PERIODICO", "PERIÓDICO")
                 .replace("SE BRINDAN", "\nSE BRINDAN")
                 .replace("EN CASO DE", "\nEN CASO DE")
                 .replace("REPOSO AUDITIVO", "\nREPOSO AUDITIVO")
-                .replace("CONTROL PERIODICO", "\nCONTROL PERIÓDICO");
+                .replace("CONTROL PERIODICO", "\nCONTROL PERIÓDICO")
+                .replace("CONTROL PERIÓDICO", "\nCONTROL PERIÓDICO");
     }
 }

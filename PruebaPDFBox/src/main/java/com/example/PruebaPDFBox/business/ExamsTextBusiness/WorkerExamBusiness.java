@@ -78,15 +78,19 @@ public class WorkerExamBusiness {
     // ── Extractores privados ────────────────────────────────────────────────
 
     private String extractCC(String text) {
-        Pattern p = Pattern.compile("(?i)\\b(?:CC|CE)\\s*[:\\-]?\\s*(\\d{6,15})");
+        Pattern p = Pattern.compile(
+                "(?i)\\b(?:C\\.?C\\.?|C\\.?E\\.?|ce|cc)\\s*[:\\-]?\\s*(\\d{6,15})");
         Matcher m = p.matcher(text);
         String best = "";
         int nameIdx = text.toUpperCase().lastIndexOf("NOMBRE");
 
         while (m.find()) {
             String found = m.group(1);
-            if (nameIdx != -1 && m.start() >= nameIdx && best.isBlank()) best = found;
-            else if (best.isBlank()) best = found;
+            if (nameIdx != -1 && m.start() >= nameIdx && best.isBlank()) {
+                best = found;
+            } else if (best.isBlank()) {
+                best = found;
+            }
         }
 
         if (best.isBlank()) {
@@ -122,6 +126,7 @@ public class WorkerExamBusiness {
 
     private String extractNombre(String text) {
         String nombre = ocrFieldExtractor.extractAfterLabel(text, "Nombre del Trabajador a Aspirante:");
+        if (nombre.isBlank()) nombre = ocrFieldExtractor.extractAfterLabel(text, "Nombres y Apellidos:");
         if (nombre.isBlank()) nombre = ocrFieldExtractor.extractAfterLabel(text, "Nombre:");
 
         if (nombre.isBlank()) {
@@ -132,43 +137,37 @@ public class WorkerExamBusiness {
         }
 
         if (!nombre.isBlank()) {
-            nombre = nombre.replaceAll("(?i)^del\\s+trabajador\\s+a\\s+aspirante\\s*[:\\-]?\\s*", "")
-                           .replaceAll("(?i)\\b(?:C[oó]digo|Genero|G[eé]nero|Sexo|Edad|CC|CE|Fecha|Empresa|Municipio|Cargo).*$(?s)", "")
-                           .replaceAll("\\r?\\n", " ")
-                           .replaceAll("\\s+", " ")
-                           .trim();
+            nombre = nombre
+                    .replaceAll("(?i)^del\\s+trabajador\\s+a\\s+aspirante\\s*[:\\-]?\\s*", "")
+                    // Corta en cualquier campo conocido que pueda aparecer inline
+                    .replaceAll("(?i)\\s+(?:C[oó]digo|Genero|G[eé]nero|Sexo|Edad|CC|CE|Fecha|Empresa|Municipio|Cargo)\\b.*$(?s)", "")
+                    .replaceAll("\\r?\\n", " ")
+                    .replaceAll("\\s+", " ")
+                    .trim();
             if (nombre.length() > 100) nombre = nombre.substring(0, 100).trim();
         }
         return nombre;
     }
 
     private String extractEstadoCivil(String text) {
-
         Pattern p = Pattern.compile(
-            "Estado\\s+Civil:\\s*(.*?)\\s+Nivel\\s+Educativo:",
-            Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-
+                "Estado\\s+Civil:\\s*(.*?)(?=\\s+Nivel\\s+Educativo:|\\s+E\\.P\\.S:|$)",
+                Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
         Matcher m = p.matcher(text);
-
         if (m.find()) {
-            return truncate(m.group(1).trim(), 80);
+            return truncate(m.group(1).replaceAll("\\s+", " ").trim(), 80);
         }
-
         return "";
     }
 
     private String extractNivelEducativo(String text) {
-
         Pattern p = Pattern.compile(
-            "Nivel\\s+Educativo:\\s*(.*?)\\s+E\\.P\\.S:",
-            Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-
+                "Nivel\\s+Educativo:\\s*(.*?)(?=\\s+E\\.P\\.S:|\\s+A\\.F\\.P:|\\s+Tipo\\s+de\\s+Sangre:|$)",
+                Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
         Matcher m = p.matcher(text);
-
         if (m.find()) {
-            return truncate(m.group(1).trim(), 100);
+            return truncate(m.group(1).replaceAll("\\s+", " ").trim(), 100);
         }
-
         return "";
     }
 

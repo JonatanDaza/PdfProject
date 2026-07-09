@@ -8,9 +8,34 @@ spring:
     password: password
     driver-class-name: org.postgresql.Driver
 
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          lob:
+            non_contextual_creation: true
+
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+
 server:
   port: Port_Of_Application
 
 jwt:
   secret: Secret_Key_For_JWT
   expiration: Time_In_Milliseconds_For_JWT_Expiration
+
+tesseract:
+  # Ruta a la carpeta que contiene los archivos *.traineddata
+  # Windows (instalación por usuario)
+  datapath: ${user.home}/AppData/Local/Programs/Tesseract-OCR/tessdata
+
+  # Si Tesseract está instalado para todos los usuarios:
+  # datapath: C:/Program Files/Tesseract-OCR/tessdata

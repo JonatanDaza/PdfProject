@@ -139,37 +139,16 @@ public class OcrFieldExtractor {
         return "";
     }
 
-    public String extractDiagnosisCode(String text){
+    public String extractDiagnosisCode(String text) {
+        if (text == null) return "";
 
-        if(text==null)
-            return "";
+        // Normaliza: reemplaza 'o'/'O' que OCR confunde con '0' en códigos CIE
+        String normalized = text.replaceAll("(?<=[A-Za-z])o(?=\\d)", "0")
+                                .replaceAll("(?<=[A-Za-z])O(?=\\d)", "0");
 
-        Matcher m = Pattern.compile(
-                "\\b([A-Z][0-9]{3,4})\\b")
-                .matcher(text);
-
-        return m.find()
-                ? m.group(1)
-                : "";
+        Matcher m = Pattern.compile("\\b([A-Za-z][0-9]{3,4})\\b").matcher(normalized);
+        return m.find() ? m.group(1).toUpperCase() : "";
     }
-
-    // public String extractDiagnosisName(String text){
-
-    //     if(text==null)
-    //         return "";
-
-    //     Matcher m = Pattern.compile(
-    //             "\\b[A-Z][0-9]{3,4}\\b\\s+(.+?)\\s+(AMBOS|DERECHO|IZQUIERDO)",
-    //             Pattern.CASE_INSENSITIVE | Pattern.DOTALL)
-    //             .matcher(text);
-
-    //     if(!m.find())
-    //         return "";
-
-    //     return m.group(1)
-    //             .replaceAll("\\s+"," ")
-    //             .trim();
-    // }
 
     public String extractDiagnosisName(String text){
 

@@ -39,11 +39,10 @@ public class GlycemiaImgBusiness {
         try {
             // Fecha desde el texto OCR de la sección
             String sectionText = context.textForSection(section.startPage(), section.endPage());
-            String rawDate = ocrFieldExtractor.extractAfterLabel(sectionText, "Fecha:");
-            String examDate = ocrFieldExtractor.extractDate(rawDate);
+            String examDate = ocrFieldExtractor.extractDate(sectionText);
 
-            if (examDate == null || examDate.isBlank()) {
-                System.err.println("No se encontró fecha en GlycemiaImgBusiness");
+            if (examDate.isBlank()) {
+                System.err.println("No se encontró fecha");
                 return false;
             }
 
