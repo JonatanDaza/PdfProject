@@ -67,6 +67,7 @@ public class PdfProcessingController {
     public ResponseEntity<String> uploadPdf(@RequestParam("file") MultipartFile file) {
         try {
             Path pdfPath = Paths.get(PDF_FOLDER);
+            Files.createDirectories(pdfPath);
 
             String fileName = file.getOriginalFilename();
             assert fileName != null;

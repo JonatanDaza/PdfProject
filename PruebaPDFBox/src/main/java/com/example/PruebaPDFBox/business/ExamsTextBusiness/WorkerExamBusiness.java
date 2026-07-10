@@ -126,27 +126,25 @@ public class WorkerExamBusiness {
 
     private String extractNombre(String text) {
         String nombre = ocrFieldExtractor.extractAfterLabel(text, "Nombre del Trabajador a Aspirante:");
-        if (nombre.isBlank()) nombre = ocrFieldExtractor.extractAfterLabel(text, "Nombres y Apellidos:");
-        if (nombre.isBlank()) nombre = ocrFieldExtractor.extractAfterLabel(text, "Nombre:");
+        if (nombre.isBlank()) {nombre = ocrFieldExtractor.extractAfterLabel(text, "Nombres y Apellidos:");}
+        if (nombre.isBlank()) {nombre = ocrFieldExtractor.extractAfterLabel(text, "Nombre:");}
 
         if (nombre.isBlank()) {
             Matcher m = Pattern.compile(
-                    "(?i)\\bNombre(?: del Trabajador a Aspirante)?\\s*[:\\-]?\\s*(.+?)(?=\\s+(?:Genero|G[eé]nero|Sexo|Edad|CC|CE|Fecha|Empresa|Municipio|Cargo)\\b|$)",
-                    Pattern.DOTALL).matcher(text);
-            if (m.find()) nombre = m.group(1).trim();
+                    "(?i)(?:Nombres\\s+y\\s+Apellidos|Nombre(?:\\s+del\\s+Trabajador\\s+a\\s+Aspirante)?)\\s*:?\\s*(.+?)\\s*(?=CC:|C\\.C\\.|G[eé]nero:|Sexo:|Edad:|Fecha:|Fecha y Hora:|Empresa:|Municipio:|Cargo:|Entidad:|$)"
+            ).matcher(text);
+
+            if (m.find()) {
+                nombre = m.group(1).trim();
+            }
         }
 
-        if (!nombre.isBlank()) {
-            nombre = nombre
-                    .replaceAll("(?i)^del\\s+trabajador\\s+a\\s+aspirante\\s*[:\\-]?\\s*", "")
-                    // Corta en cualquier campo conocido que pueda aparecer inline
-                    .replaceAll("(?i)\\s+(?:C[oó]digo|Genero|G[eé]nero|Sexo|Edad|CC|CE|Fecha|Empresa|Municipio|Cargo)\\b.*$(?s)", "")
-                    .replaceAll("\\r?\\n", " ")
-                    .replaceAll("\\s+", " ")
-                    .trim();
-            if (nombre.length() > 100) nombre = nombre.substring(0, 100).trim();
-        }
-        return nombre;
+        nombre = nombre
+                .replaceAll("\\r?\\n", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
+
+        return truncate(nombre, 100);
     }
 
     private String extractEstadoCivil(String text) {

@@ -4,63 +4,115 @@ import { uploadHC, extractHC } from "@services/api/processPdfService";
 import { useState } from "react";
 import { toast } from "sonner";
 
+type FileEntry = {
+  id: number;
+  file: File | null;
+  status: "idle" | "processing" | "success" | "error";
+  message?: string;
+};
+
 const UploadFile: React.FC = () => {
-  const [file, setFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
+  const [files, setFiles] = useState<FileEntry[]>([
+    { id: 1, file: null, status: "idle" },
+  ]);
+  const [processing, setProcessing] = useState(false);
 
-  const [extracting, setExtracting] = useState(false);
-  const [extractResult, setExtractResult] = useState<any | null>(null);
-
-  // Captura el archivo seleccionado
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setFile(e.target.files[0]);
-      setExtractResult(null);
-    }
+  const addFile = () => {
+    setFiles((currentFiles) => [
+      ...currentFiles,
+      {
+        id: Date.now() + currentFiles.length,
+        file: null,
+        status: "idle",
+      },
+    ]);
   };
 
-  // Subida del archivo
-  const handleUpload = async () => {
-    if (!file) {
-      toast.error("Selecciona un archivo PDF");
+  const removeFile = (id: number) => {
+    setFiles((currentFiles) => {
+      if (currentFiles.length === 1) {
+        return [{ id: 1, file: null, status: "idle" }];
+      }
+
+      const nextFiles = currentFiles.filter((entry) => entry.id !== id);
+
+      return nextFiles.length > 0
+        ? nextFiles
+        : [{ id: 1, file: null, status: "idle" }];
+    });
+  };
+
+  const handleFileChange = (id: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0] ?? null;
+
+    setFiles((currentFiles) =>
+      currentFiles.map((entry) =>
+        entry.id === id
+          ? { ...entry, file: selectedFile, status: "idle", message: undefined }
+          : entry
+      )
+    );
+  };
+
+  const handleCreateHistory = async () => {
+    const selectedFiles = files.filter((entry) => entry.file);
+
+    if (selectedFiles.length === 0) {
+      toast.error("Selecciona al menos un archivo PDF");
       return;
     }
 
-    setUploading(true);
+    setProcessing(true);
 
     try {
-      const response = await uploadHC(file);
+      for (const entry of selectedFiles) {
+        if (!entry.file) {
+          continue;
+        }
 
-      toast.success(
-        typeof response === "string"
-          ? response
-          : "Archivo subido correctamente"
+        setFiles((currentFiles) =>
+          currentFiles.map((fileEntry) =>
+            fileEntry.id === entry.id
+              ? { ...fileEntry, status: "processing", message: "Procesando..." }
+              : fileEntry
+          )
+        );
+
+        await uploadHC(entry.file);
+        const extractResponse = await extractHC(entry.file);
+
+        setFiles((currentFiles) =>
+          currentFiles.map((fileEntry) =>
+            fileEntry.id === entry.id
+              ? {
+                  ...fileEntry,
+                  status: "success",
+                  message: "Examen procesado correctamente",
+                }
+              : fileEntry
+          )
+        );
+
+        toast.success(
+          typeof extractResponse === "string"
+            ? extractResponse
+            : `Examen para ${entry.file.name} procesado correctamente`
+        );
+      }
+    } catch (err: any) {
+      const errorMessage = err?.message || "Error al procesar uno de los archivos";
+
+      setFiles((currentFiles) =>
+        currentFiles.map((fileEntry) =>
+          fileEntry.status === "processing"
+            ? { ...fileEntry, status: "error", message: errorMessage }
+            : fileEntry
+        )
       );
-    } catch (err: any) {
-      toast.error(err.message || "Error al subir el archivo");
+
+      toast.error(errorMessage);
     } finally {
-      setUploading(false);
-    }
-  };
-
-  // Extracción de la historia clínica
-  const handleExtract = async () => {
-    if (!file) {
-      toast.error("Selecciona un archivo PDF");
-      return;
-    }
-
-    setExtracting(true);
-
-    try {
-      const response = await extractHC(file);
-
-      setExtractResult(response);
-      toast.success("Historia clínica extraída correctamente");
-    } catch (err: any) {
-      toast.error(err.message || "Error al extraer la historia clínica");
-    } finally {
-      setExtracting(false);
+      setProcessing(false);
     }
   };
 
@@ -68,44 +120,83 @@ const UploadFile: React.FC = () => {
     <div className="flex items-center justify-center min-h-screen w-full px-4 py-8 bg-white rounded-lg shadow-md border border-gray-200">
       <div className="p-8 w-full max-w-[60vw] max-h-[600vh] overflow-y-auto">
         <h2 className="text-2xl font-bold text-gray-800 mb-8 text-center">
-          Subir Historia Clínica
+          Crear Historia Clínica
         </h2>
 
-        <div className="border-2 border-dashed border-blue-500 rounded-lg p-8 mb-6 hover:border-blue-500 hover:bg-blue-50 transition-all cursor-pointer bg-gray-50">
-          <label className="flex flex-col items-center justify-center cursor-pointer">
-            <svg
-              className="w-12 h-12 text-blue-500 mb-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+        <div className="space-y-4 mb-6">
+          {files.map((entry, index) => (
+            <div
+              key={entry.id}
+              className="relative border-2 border-dashed border-blue-500 rounded-lg p-6 hover:border-blue-500 hover:bg-blue-50 transition-all bg-gray-50"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
+              <button
+                type="button"
+                onClick={() => removeFile(entry.id)}
+                disabled={processing}
+                className="absolute right-0 top-0 inline-flex h-10 w-10 items-center justify-center rounded-full  text-blue-600 hover:text-red-600 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label={`Eliminar archivo ${index + 1}`}
+              >
+                <span className="text-lg leading-none">×</span>
+              </button>
 
-            <input
-              type="file"
-              onChange={handleFileChange}
-              accept=".pdf"
-              className="hidden"
-            />
+              <label className="flex flex-col items-center justify-center cursor-pointer text-center gap-3">
+                <svg
+                  className="w-12 h-12 text-blue-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
 
-            <p className="text-sm font-semibold text-blue-600 text-center">
-              {file ? file.name : "Selecciona un archivo PDF"}
-            </p>
-          </label>
+                <input
+                  type="file"
+                  onChange={(event) => handleFileChange(entry.id, event)}
+                  accept=".pdf"
+                  className="hidden"
+                />
+
+                <p className="text-sm font-semibold text-blue-600">
+                  Archivo {index + 1}: {entry.file ? entry.file.name : "Selecciona un archivo PDF"}
+                </p>
+
+                {entry.message && (
+                  <p
+                    className={`text-xs font-medium ${
+                      entry.status === "error"
+                        ? "text-red-600"
+                        : entry.status === "success"
+                        ? "text-green-600"
+                        : "text-gray-500"
+                    }`}
+                  >
+                    {entry.message}
+                  </p>
+                )}
+              </label>
+            </div>
+          ))}
         </div>
 
         <button
-          onClick={handleUpload}
-          disabled={!file || uploading}
-          className="w-full bg-green-500 hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100 flex items-center justify-center gap-2"
+          onClick={addFile}
+          disabled={processing}
+          className="w-full bg-slate-700 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100 flex items-center justify-center gap-2"
         >
-          {uploading ? (
+          Agregar otro archivo
+        </button>
+
+        <button
+          onClick={handleCreateHistory}
+          disabled={processing || files.every((entry) => !entry.file)}
+          className="w-full mt-4 bg-green-500 hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100 flex items-center justify-center gap-2"
+        >
+          {processing ? (
             <>
               <svg
                 className="animate-spin h-5 w-5"
@@ -128,63 +219,12 @@ const UploadFile: React.FC = () => {
                   3.042 1.135 5.824 3 7.938l3-2.647z"
                 />
               </svg>
-              Subiendo...
+              Creando historias...
             </>
           ) : (
-            "Subir archivo"
+            "Crear historia"
           )}
         </button>
-
-        {/* Mostrar botón de extracción después de seleccionar un archivo */}
-        {file && (
-          <button
-            onClick={handleExtract}
-            disabled={extracting}
-            className="w-full mt-4 bg-purple-500 hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100 flex items-center justify-center gap-2"
-          >
-            {extracting ? (
-              <>
-                <svg
-                  className="animate-spin h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 
-                    5.291A7.962 7.962 0 014 12H0c0 
-                    3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-                Extrayendo...
-              </>
-            ) : (
-              "Extraer historia clínica"
-            )}
-          </button>
-        )}
-
-        {/* Opcional: mostrar JSON extraído */}
-        {extractResult && (
-          <div className="mt-6 rounded-lg border border-gray-200 p-4 bg-gray-50">
-            <h3 className="font-semibold text-gray-700 mb-2">
-              Resultado de la extracción
-            </h3>
-
-            <pre className="text-xs overflow-auto text-gray-700">
-              {JSON.stringify(extractResult, null, 2)}
-            </pre>
-          </div>
-        )}
       </div>
     </div>
   );

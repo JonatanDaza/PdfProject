@@ -3,15 +3,16 @@ package com.example.PruebaPDFBox.business;
 import java.awt.image.BufferedImage;
 import java.util.*;
 
-import com.example.PruebaPDFBox.business.LaboratoryBusiness.ExamImgBusiness;
-import com.example.PruebaPDFBox.utilities.extractor.SectionExtractor.PdfImgSectionExtractor;
-
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.PruebaPDFBox.business.ExamsTextBusiness.OptometryTextBusiness;
+import com.example.PruebaPDFBox.business.ExamsTextBusiness.SpirometryBusiness;
 import com.example.PruebaPDFBox.business.ExamsTextBusiness.AudiometryTextBusiness;
+import com.example.PruebaPDFBox.business.ExamsTextBusiness.GlycemiaImgBusiness;
+import com.example.PruebaPDFBox.business.ExamsTextBusiness.HemogramImgBusiness;
+import com.example.PruebaPDFBox.business.ExamsTextBusiness.LipidProfileImgBusiness;
 import com.example.PruebaPDFBox.business.ExamsTextBusiness.OccupationalMedicineTextBusiness;
 import com.example.PruebaPDFBox.business.ExamsTextBusiness.WorkerExamBusiness;
 import com.example.PruebaPDFBox.model.Worker;
@@ -29,13 +30,15 @@ import lombok.RequiredArgsConstructor;
 public class PdfProcessingBusiness {
 
     private final UnifiedSectionDetector unifiedSectionDetector;
-    private final PdfImgSectionExtractor pdfImgSectionExtractor;
-    private final ExamImgBusiness examImgBusiness;
     private final WorkerExamBusiness workerExamBusiness;
     private final WorkerService workerService;
     private final OccupationalMedicineTextBusiness occupationalMedicineTextBusiness;
     private final AudiometryTextBusiness audiometryTextBusiness;
     private final OptometryTextBusiness optometryTextBusiness;
+    private final GlycemiaImgBusiness glycemiaImgBusiness;
+    private final HemogramImgBusiness hemogramImgBusiness;
+    private final LipidProfileImgBusiness lipidProfileImgBusiness;
+    private final SpirometryBusiness spirometryBusiness;
     private final PdfPageRenderer pdfPageRenderer;
     private final ImageTextExtractor imageTextExtractor;
 
@@ -81,11 +84,6 @@ public class PdfProcessingBusiness {
                 }
 
                 if (workerPersisted) {
-                    boolean processed = false;
-
-                    if (pdfImgSectionExtractor.hasValidImages(document, sectionArea)) {
-                        processed = examImgBusiness.processExam(document, sectionKey, sectionArea, worker, context);
-                    }
 
                     boolean textProcessed = switch (sectionKey) {
                         case "OCCUPATIONAL_MEDICINE_LABEL" ->
@@ -94,11 +92,18 @@ public class PdfProcessingBusiness {
                                 audiometryTextBusiness.process(context, sectionArea, worker, sectionArea.examName());
                         case "OPTOMETRY_LABEL" ->
                                 optometryTextBusiness.process(context, sectionArea, worker, sectionArea.examName());
+                        case "GLYCEMYA_IMAGE_LABEL" -> 
+                                glycemiaImgBusiness.process(context, sectionArea, worker, sectionArea.examName());
+                        case "HEMOGRAM_IMAGE_LABEL" -> 
+                                hemogramImgBusiness.process(context, sectionArea, worker, sectionArea.examName());
+                        case "LIPID_PROFILE_IMAGE_LABEL" -> 
+                                lipidProfileImgBusiness.process(context, sectionArea, worker, sectionArea.examName());
+                        case "ESPIROMETRIA_LABEL" ->
+                                spirometryBusiness.process(context, sectionArea, worker, sectionArea.examName());
                         default -> false;
                     };
 
-                    processed = processed || textProcessed;
-                    if (processed) {
+                    if (textProcessed) {
                         examsProcessed++;
                         System.out.println("Examen procesado: " + sectionArea.examName());
                     }

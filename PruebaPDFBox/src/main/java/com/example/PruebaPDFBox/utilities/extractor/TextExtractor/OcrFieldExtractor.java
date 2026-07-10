@@ -280,6 +280,17 @@ public class OcrFieldExtractor {
         return result.trim();
     }
 
+    public String extractLabValue(String text, String analyte) {
+
+        if (text == null) return "";
+
+        Matcher m = Pattern.compile(
+                "(?i)" + Pattern.quote(analyte) +
+                "\\s+(\\d+(?:[.,]\\d+)?)\\s*(?:mg/?d[l1]|g/?d[l1]|%|UI/?L|U/?L)?"
+        ).matcher(text);
+
+        return m.find() ? m.group(1).replace(',', '.') : "";
+    }
 
     public String extractNumberAfterLabel(String text, String label) {
 

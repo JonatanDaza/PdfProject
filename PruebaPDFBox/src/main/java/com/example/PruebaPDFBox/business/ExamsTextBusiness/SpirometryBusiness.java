@@ -1,121 +1,101 @@
-// package com.example.PruebaPDFBox.business.ExamsTextBusiness;
+package com.example.PruebaPDFBox.business.ExamsTextBusiness;
 
-// import java.io.IOException;
-// import java.util.*;
+import java.util.*;
 
-// import org.apache.pdfbox.pdmodel.PDDocument;
-// import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Component;
 
-// import com.example.PruebaPDFBox.model.*;
-// import com.example.PruebaPDFBox.record.AreaConfig;
-// import com.example.PruebaPDFBox.record.FieldExtractionConfig;
-// import com.example.PruebaPDFBox.record.SectionArea;
-// import com.example.PruebaPDFBox.record.SubSectionArea;
-// import com.example.PruebaPDFBox.service.ServiceEntity.ClinicalHistoryService;
-// import com.example.PruebaPDFBox.service.ServiceEntity.DataValueService;
-// import com.example.PruebaPDFBox.service.ServiceEntity.ExamService;
-// import com.example.PruebaPDFBox.utilities.extractor.SectionExtractor.PdfSubSectionExtractor;
-// import com.example.PruebaPDFBox.utilities.extractor.TextExtractor.PlainTextExtractor;
+import com.example.PruebaPDFBox.model.*;
+import com.example.PruebaPDFBox.record.OcrPageContext;
+import com.example.PruebaPDFBox.record.SectionArea;
+import com.example.PruebaPDFBox.service.ServiceEntity.ClinicalHistoryService;
+import com.example.PruebaPDFBox.service.ServiceEntity.DataValueService;
+import com.example.PruebaPDFBox.service.ServiceEntity.ExamService;
+import com.example.PruebaPDFBox.utilities.extractor.TextExtractor.OcrFieldExtractor;
 
-// import lombok.RequiredArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
-// @Component
-// @RequiredArgsConstructor
-// public class SpirometryBusiness {
+@Component
+@RequiredArgsConstructor
+public class SpirometryBusiness {
 
-//     private final PlainTextExtractor plainTextExtractor;
-//     private final ExamService examService;
-//     private final ClinicalHistoryService clinicalHistoryService;
-//     private final DataValueService dataValueService;
-//     private final PdfSubSectionExtractor pdfSubSectionExtractor;
+    private final OcrFieldExtractor ocrFieldExtractor;
+    private final ExamService examService;
+    private final ClinicalHistoryService clinicalHistoryService;
+    private final DataValueService dataValueService;
 
-//     public boolean process(PDDocument document, SectionArea section, Worker worker, String examName) {
-//         try {
-//             // Extraer subsecciones primero
-//             Map<String, SubSectionArea> subSections = pdfSubSectionExtractor.extract(
-//                     document, section, SUB_SECTION_TITLES
-//             );
+    public boolean process(OcrPageContext context, SectionArea section, Worker worker, String examName) {
+        try {
+                // Extraer subsecciones primero
+                String sectionText = context.textForSection(section.startPage(), section.endPage());
 
-//             // Extraer fecha desde DATOS PERSONALES
-//             SubSectionArea personalDataArea = subSections.get("DATOS PERSONALES");
-//             String examDate = null;
+                System.out.println("=== ESPIROMETRÍA - TEXTO OCR ===");
+                System.out.println(sectionText);
 
-//             if (personalDataArea != null) {
-//                 Map<String, AreaConfig> config = buildSpirometryConfig();
-//                 List<FieldExtractionConfig> dateFields = new ArrayList<>();
-//                 dateFields.add(new FieldExtractionConfig(
-//                         "Fecha:", "Fecha:",
-//                         config.get("Fecha:"),
-//                         FieldExtractionConfig.ExtractionStrategy.EXACT_MATCH
-//                 ));
+                String rawDate = ocrFieldExtractor.extractAfterLabel(sectionText, "Fecha:");
 
-//                 Map<String, String> dateData = plainTextExtractor.extractMultipleValues(
-//                         document, dateFields, section, personalDataArea
-//                 );
+                if (rawDate.isBlank()) {
+                    rawDate = ocrFieldExtractor.extractAfterLabel(sectionText, "Fecha y Hora:");
+                }
 
-//                 String rawDate = dateData.get("Fecha:");
-//                 examDate = plainTextExtractor.extractDate(rawDate);
-//             }
+                String examDate = ocrFieldExtractor.extractDate(rawDate);
 
-//             if (examDate == null || examDate.isEmpty()) {
-//                 System.err.println("No se encontró fecha de examen en DATOS PERSONALES");
-//                 return false;
-//             }
+                if (examDate.isBlank()) {
+                    examDate = ocrFieldExtractor.extractDate(sectionText);
+                }
 
-//             if (examService.examAlreadyExists(examDate, examName)) {
-//                 System.out.println("Examen ya existe: " + examName + " - " + examDate);
-//                 return false;
-//             }
+                if (examDate.isBlank()) {
+                    System.err.println("No se encontró fecha");
+                    return false;
+                }
 
-//             Map<String, String> values = buildDataValues(document, section, subSections);
+            if (examDate == null || examDate.isEmpty()) {
+                System.err.println("No se encontró fecha de examen en DATOS PERSONALES");
+                return false;
+            }
 
-//             ClinicalHistory clinicalHistory = clinicalHistoryService.findOrCreate(worker, examDate);
-//             Exam exam = examService.save(examName, examDate, worker, clinicalHistory);
-//             dataValueService.saveAll(values, exam);
+            if (examService.examAlreadyExists(examDate, examName)) {
+                System.out.println("Examen ya existe: " + examName + " - " + examDate);
+                return false;
+            }
 
-//             return true;
-//         } catch (IOException e) {
-//             System.err.println("Error procesando medicina ocupacional: " + e.getMessage());
-//             return false;
-//         }
-//     }
+            System.out.println("rawDate: " + rawDate);
+            System.out.println("examDate: " + examDate);
+            
+            Map<String, String> values = buildDataValues(context, section);
 
-//     private Map<String, String> buildDataValues(
-//             PDDocument document,
-//             SectionArea section,
-//             Map<String, SubSectionArea> subSections
-//     ) throws IOException {
+            System.out.println("=== ESPIROMETRÍA - VALORES ===");
+            values.forEach((k, v) ->
+                System.out.println("  [" + k + "] -> '" + v + "'")
+            );
 
-//         Map<String, String> values = new LinkedHashMap<>();
-//         Map<String, AreaConfig> config = buildSpirometryConfig();
+            ClinicalHistory clinicalHistory = clinicalHistoryService.findOrCreate(worker, examDate);
+            Exam exam = examService.save(examName, examDate, worker, clinicalHistory);
+            dataValueService.saveAll(values, exam);
 
-//         SubSectionArea spirometryArea = subSections.get("INFORME DE ESPIROMETRÍA");
-//         if (spirometryArea != null) {
-//             List<FieldExtractionConfig> fields = buildSpirometryField(config);
-//             Map<String, String> extracted = plainTextExtractor.extractMultipleValues(
-//                     document, fields, section, spirometryArea
-//             );
+            return true;
+        } catch (Exception e) {
+            System.err.println("Error procesando medicina ocupacional: " + e.getMessage());
+            return false;
+        }
+    }
 
-//             values.putAll(extracted);
-//         }
+    private Map<String, String> buildDataValues(
+            OcrPageContext context,
+            SectionArea section
+    ) {
 
-//         return values;
-//     }
+        Map<String, String> values = new LinkedHashMap<>();
 
-//     private List<FieldExtractionConfig> buildSpirometryField(Map<String, AreaConfig> config) {
-//         List<FieldExtractionConfig> fields = new ArrayList<>();
+        String text = context.textForSection(section.startPage(), section.endPage());
 
-//         fields.add(new FieldExtractionConfig("Interpretación", "Interpretacion",
-//                 config.get("Interpretación"), FieldExtractionConfig.ExtractionStrategy.HORIZONTAL));
-//         return fields;
-//     }
+        String interpretacion = ocrFieldExtractor.extractAfterLabel(text, "Interpretación:");
 
-//     private Map<String, AreaConfig> buildSpirometryConfig() {
-//         Map<String, AreaConfig> config = new HashMap<>();
-//         config.put("Interpretación", new AreaConfig(0, 50, 50));
+        if (interpretacion.isBlank()) {
+            interpretacion = ocrFieldExtractor.extractAfterLabel(text, "Interpretacion:");
+        }
 
-//         return config;
-//     }
+        values.put("Interpretación", interpretacion);
 
-//     private static final Set<String> SUB_SECTION_TITLES = Set.of();
-// }
+        return values;
+    }
+}
